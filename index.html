@@ -181,9 +181,18 @@
       font-size: 42px;
       font-weight: 900;
       color: #111;
-      -webkit-text-stroke: 4px #fff;
-      paint-order: stroke fill;
-      text-shadow: 0 0 18px rgba(211,47,47,0.95), 0 0 35px rgba(211,47,47,0.7), 0 0 60px rgba(211,47,47,0.4);
+      text-shadow:
+        0px  3px 0 #fff,  0px -3px 0 #fff,
+        3px  0px 0 #fff, -3px  0px 0 #fff,
+        2px  2px 0 #fff, -2px  2px 0 #fff,
+        2px -2px 0 #fff, -2px -2px 0 #fff,
+        3px  1px 0 #fff, -3px  1px 0 #fff,
+        3px -1px 0 #fff, -3px -1px 0 #fff,
+        1px  3px 0 #fff, -1px  3px 0 #fff,
+        1px -3px 0 #fff, -1px -3px 0 #fff,
+        0 0 18px rgba(211,47,47,0.95),
+        0 0 35px rgba(211,47,47,0.7),
+        0 0 60px rgba(211,47,47,0.4);
       opacity: 0;
     }
     @keyframes nicePop {
@@ -194,6 +203,16 @@
       100% { opacity: 0;   transform: translateX(-50%) translateY(-72px) scale(0.92); }
     }
     #nice-burst.pop { animation: nicePop 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    #nice-burst.sad {
+      font-size: 24px;
+      color: #444;
+      text-shadow:
+        0px  2px 0 #fff,  0px -2px 0 #fff,
+        2px  0px 0 #fff, -2px  0px 0 #fff,
+        1px  1px 0 #fff, -1px  1px 0 #fff,
+        1px -1px 0 #fff, -1px -1px 0 #fff;
+    }
+    #nice-burst.sad.pop { animation: nicePop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
     #sheet-backdrop {
@@ -1971,6 +1990,7 @@ out center tags;`.trim();
     let currentUsername = null;   // set after login
     let currentDeviceId = null;   // Firebase Auth uid
     let isAdmin = false;          // set from Firestore is_admin field
+    let currentPrices = {};       // most recent price_cents per fuel type for open station
 
     // ── FIREBASE INIT ────────────────────────────────────────────────
     function initFirebase() {
@@ -2716,8 +2736,12 @@ out center tags;`.trim();
             byFuel[d.fuel_type] = d;
           }
         });
+        currentPrices = {};
         ['regular', 'mid', 'premium', 'diesel'].forEach(function (ft) {
-          if (byFuel[ft]) renderPriceCard(ft, byFuel[ft]);
+          if (byFuel[ft]) {
+            renderPriceCard(ft, byFuel[ft]);
+            currentPrices[ft] = byFuel[ft].price_cents;
+          }
         });
 
         if (snap.empty) {
@@ -3025,8 +3049,14 @@ out center tags;`.trim();
             });
 
           setRateLimit(currentStationId, 'report');
-          if (hasPrice) showNice();
-          else showToast('Report posted — thanks!');
+          if (hasPrice) {
+            const prevCents = currentPrices[fuelType] || null;
+            const newCents  = Math.round(priceVal * 100);
+            if (prevCents && newCents > prevCents) showSad();
+            else showNice();
+          } else {
+            showToast('Report posted — thanks!');
+          }
 
           // Reset form
           fuelSelect.value = '';
@@ -3091,14 +3121,17 @@ out center tags;`.trim();
         .replace(/'/g, '&#039;');
     }
 
-    function showNice() {
+    function showNice() { showBurst(false); }
+    function showSad()  { showBurst(true);  }
+    function showBurst(sad) {
       const el = document.getElementById('nice-burst');
-      el.textContent = 'Nice!';
-      el.classList.remove('pop');
+      el.textContent = sad ? 'Oh.. hope it goes down soon :(' : 'Nice!';
+      el.classList.remove('pop', 'sad');
       void el.offsetWidth;
+      if (sad) el.classList.add('sad');
       el.classList.add('pop');
       el.addEventListener('animationend', function () {
-        el.classList.remove('pop');
+        el.classList.remove('pop', 'sad');
       }, { once: true });
     }
 
