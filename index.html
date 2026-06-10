@@ -170,6 +170,31 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    /* ── NICE BURST ─────────────────────────────────────────────── */
+    #nice-burst {
+      position: fixed;
+      top: 42%;
+      left: 50%;
+      transform: translateX(-50%) translateY(0) scale(1);
+      z-index: 20000;
+      pointer-events: none;
+      font-size: 42px;
+      font-weight: 900;
+      color: #111;
+      -webkit-text-stroke: 2px #fff;
+      paint-order: stroke fill;
+      text-shadow: 0 0 18px rgba(211,47,47,0.95), 0 0 35px rgba(211,47,47,0.7), 0 0 60px rgba(211,47,47,0.4);
+      opacity: 0;
+    }
+    @keyframes nicePop {
+      0%   { opacity: 0;   transform: translateX(-50%) translateY(0px)   scale(0.6); }
+      12%  { opacity: 1;   transform: translateX(-50%) translateY(-8px)  scale(1.08); }
+      25%  { opacity: 1;   transform: translateX(-50%) translateY(-14px) scale(1); }
+      75%  { opacity: 1;   transform: translateX(-50%) translateY(-18px) scale(1); }
+      100% { opacity: 0;   transform: translateX(-50%) translateY(-72px) scale(0.92); }
+    }
+    #nice-burst.pop { animation: nicePop 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
     #sheet-backdrop {
       position: fixed;
@@ -1733,6 +1758,7 @@
 
   <!-- Toast notification -->
   <div id="toast"></div>
+  <div id="nice-burst"></div>
 
   <!-- Profile / history button -->
   <button id="profile-btn" aria-label="My reports">
@@ -2999,7 +3025,8 @@ out center tags;`.trim();
             });
 
           setRateLimit(currentStationId, 'report');
-          showToast('Report posted — thanks!');
+          if (hasPrice) showNice();
+          else showToast('Report posted — thanks!');
 
           // Reset form
           fuelSelect.value = '';
@@ -3062,6 +3089,17 @@ out center tags;`.trim();
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function showNice() {
+      const el = document.getElementById('nice-burst');
+      el.textContent = 'Nice!';
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+      el.addEventListener('animationend', function () {
+        el.classList.remove('pop');
+      }, { once: true });
     }
 
     function showToast(msg, duration) {
