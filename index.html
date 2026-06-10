@@ -204,13 +204,20 @@
     }
     #nice-burst.pop { animation: nicePop 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     #nice-burst.sad {
-      font-size: 24px;
-      color: #444;
+      font-size: 26px;
+      color: #111;
       text-shadow:
-        0px  2px 0 #fff,  0px -2px 0 #fff,
-        2px  0px 0 #fff, -2px  0px 0 #fff,
-        1px  1px 0 #fff, -1px  1px 0 #fff,
-        1px -1px 0 #fff, -1px -1px 0 #fff;
+        0px  3px 0 #fff,  0px -3px 0 #fff,
+        3px  0px 0 #fff, -3px  0px 0 #fff,
+        2px  2px 0 #fff, -2px  2px 0 #fff,
+        2px -2px 0 #fff, -2px -2px 0 #fff,
+        3px  1px 0 #fff, -3px  1px 0 #fff,
+        3px -1px 0 #fff, -3px -1px 0 #fff,
+        1px  3px 0 #fff, -1px  3px 0 #fff,
+        1px -3px 0 #fff, -1px -3px 0 #fff,
+        0 0 18px rgba(211,47,47,0.95),
+        0 0 35px rgba(211,47,47,0.7),
+        0 0 60px rgba(211,47,47,0.4);
     }
     #nice-burst.sad.pop { animation: nicePop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
@@ -3121,11 +3128,37 @@ out center tags;`.trim();
         .replace(/'/g, '&#039;');
     }
 
+    var niceQuips = [
+      'Nice!',
+      'Score!',
+      'Yes!!',
+      'Deal alert!',
+      'Love that.',
+      'Cha-ching!',
+      'Price drop!',
+      'Treat yourself.',
+      'Go fill up now!',
+      'Saving is caring.',
+    ];
+    var sadQuips = [
+      'Oh.. hope it goes down soon :(',
+      'Yikes. That hurts.',
+      'Ouch.',
+      'The struggle is real.',
+      'Time to carpool?',
+      'Feeling the squeeze.',
+      'Your wallet is crying.',
+      'Oof.',
+      'Maybe take the bus?',
+      'Highway robbery.',
+    ];
     function showNice() { showBurst(false); }
     function showSad()  { showBurst(true);  }
     function showBurst(sad) {
-      const el = document.getElementById('nice-burst');
-      el.textContent = sad ? 'Oh.. hope it goes down soon :(' : 'Nice!';
+      const pool = sad ? sadQuips : niceQuips;
+      const msg  = pool[Math.floor(Math.random() * pool.length)];
+      const el   = document.getElementById('nice-burst');
+      el.textContent = msg;
       el.classList.remove('pop', 'sad');
       void el.offsetWidth;
       if (sad) el.classList.add('sad');
