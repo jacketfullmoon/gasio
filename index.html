@@ -44,6 +44,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <style>
     /* ── RESET & TOKENS ─────────────────────────────────────────── */
@@ -542,6 +543,19 @@
       gap: 12px;
       margin-bottom: 6px;
     }
+    .load-more-btn {
+      width: 100%;
+      padding: 10px;
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 2px;
+    }
+    .load-more-btn:active { opacity: 0.6; }
 
     .no-data-msg {
       font-size: 13px;
@@ -1662,6 +1676,110 @@
 
     /* Green match dot label on map */
     /* (layer rendered by MapLibre, no extra CSS needed) */
+    /* ── AVATAR CIRCLES ─────────────────────────────────────────── */
+    .avatar-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-circle-large {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .avatar-circle-large img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .avatar-upload-hint {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .avatar-circle-large:hover .avatar-upload-hint { opacity: 1; }
+
+    /* ── USERNAME LINK ───────────────────────────────────────────── */
+    .username-link {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .username-link:hover { text-decoration: underline; }
+
+    /* ── USER PROFILE PANEL ──────────────────────────────────────── */
+    #user-profile-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      transform: translateX(-50%) translateY(102%);
+      border-radius: 22px 22px 0 0;
+      box-shadow: 0 -6px 40px rgba(0,0,0,0.18);
+      background: var(--bg);
+      z-index: 9998;
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #user-profile-panel.open { transform: translateX(-50%) translateY(0); }
+    #user-profile-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #user-profile-info { display: flex; align-items: center; gap: 14px; }
+    #user-profile-name { font-weight: 700; font-size: 18px; color: var(--text1); }
+    #user-profile-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    #user-profile-feed {
+      overflow-y: auto;
+      flex: 1;
+      padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .user-report-row {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .user-report-row:active { background: var(--surface); }
+    .user-report-station-name { font-weight: 600; font-size: 13px; color: var(--text1); }
+    .user-report-addr { font-size: 12px; color: var(--text3); }
+    .user-report-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
     /* ── IOS INSTALL BANNER ─────────────────────────────────────── */
     #install-banner {
       position: fixed;
@@ -1857,6 +1975,26 @@
   <!-- Toast notification -->
   <div id="toast"></div>
   <div id="nice-burst"></div>
+
+  <!-- Hidden file input for avatar upload -->
+  <input type="file" id="avatar-file-input" accept="image/*" style="display:none" />
+
+  <!-- User profile panel -->
+  <div id="user-profile-panel">
+    <div id="user-profile-panel-header">
+      <div id="user-profile-info">
+        <div id="user-profile-avatar-large" class="avatar-circle-large">
+          <div class="avatar-upload-hint" id="avatar-upload-hint" style="display:none">📷</div>
+        </div>
+        <div>
+          <div id="user-profile-name"></div>
+          <div id="user-profile-meta"></div>
+        </div>
+      </div>
+      <button class="panel-close-btn" id="user-profile-close" aria-label="Close">×</button>
+    </div>
+    <div id="user-profile-feed"></div>
+  </div>
 
   <!-- iOS install banner -->
   <div id="install-banner">
@@ -2081,7 +2219,7 @@
 out center tags;`.trim();
 
     // ── STATE ────────────────────────────────────────────────────────
-    let map, db;
+    let map, db, storage;
     let currentStationId = null;
     let sheetOpen = false;
     let stationsGeoJSON = null;
@@ -2090,6 +2228,9 @@ out center tags;`.trim();
     let currentDeviceId = null;   // Firebase Auth uid
     let isAdmin = false;          // set from Firestore is_admin field
     let currentPrices = {};       // most recent price_cents per fuel type for open station
+    let stationReports = [];      // full fetched report list for current station
+    let stationReplies = [];      // corresponding replies
+    let visibleCount  = 3;        // how many reports are currently shown
 
     // ── FIREBASE INIT ────────────────────────────────────────────────
     function initFirebase() {
@@ -2100,6 +2241,7 @@ out center tags;`.trim();
       try {
         firebase.initializeApp(FIREBASE_CONFIG);
         db = firebase.firestore();
+        storage = firebase.storage();
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         return true;
       } catch (e) {
@@ -2802,6 +2944,26 @@ out center tags;`.trim();
     }
 
     // ── FIRESTORE ────────────────────────────────────────────────────
+    function renderReportsBatch(stationId) {
+      const list = document.getElementById('reports-list');
+      list.innerHTML = '';
+      const slice = stationReports.slice(0, visibleCount);
+      slice.forEach(function (r, i) {
+        list.appendChild(buildReportCard(r, stationReplies[i] || [], stationId));
+      });
+      if (visibleCount < stationReports.length) {
+        const remaining = stationReports.length - visibleCount;
+        const btn = document.createElement('button');
+        btn.className = 'load-more-btn';
+        btn.textContent = 'Load ' + Math.min(3, remaining) + ' more report' + (Math.min(3, remaining) === 1 ? '' : 's');
+        btn.addEventListener('click', function () {
+          visibleCount += 3;
+          renderReportsBatch(stationId);
+        });
+        list.appendChild(btn);
+      }
+    }
+
     async function loadStationData(stationId) {
       const list = document.getElementById('reports-list');
       // Reset trend chart immediately so previous station's data doesn't linger
@@ -2869,11 +3031,10 @@ out center tags;`.trim();
             });
         });
 
-        const allReplies = await Promise.all(replyFetches);
-        list.innerHTML = '';
-        reports.forEach(function (r, i) {
-          list.appendChild(buildReportCard(r, allReplies[i] || [], stationId));
-        });
+        stationReplies = await Promise.all(replyFetches);
+        stationReports = reports;
+        visibleCount = 3;
+        renderReportsBatch(stationId);
         renderTrendChart(reports, null);
 
       } catch (e) {
@@ -2941,7 +3102,7 @@ out center tags;`.trim();
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<span class="report-time">' + timeAgo(date) + (report.username ? ' · <b>' + escapeHTML(report.username) + '</b>' : '') + '</span>' +
+        '<span class="report-time">' + timeAgo(date) + (report.username ? ' · <span class="username-link" data-username="' + escapeHTML(report.username) + '">' + escapeHTML(report.username) + '</span>' : '') + '</span>' +
         '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
           '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
         '</button>' +
@@ -2970,6 +3131,14 @@ out center tags;`.trim();
         '</div>';
 
       card.innerHTML = inner;
+
+      // Wire username links → open profile
+      card.querySelectorAll('.username-link').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openUserProfile(this.dataset.username);
+        });
+      });
 
       // Wire confirm "Still accurate" button
       card.querySelector('.confirm-btn').addEventListener('click', async function () {
@@ -3487,12 +3656,28 @@ out center tags;`.trim();
       }
 
       // ── Render results into dropdown
-      function renderResults(stations, places) {
+      async function searchUsers(q) {
+        if (!db || q.length < 2) return [];
+        try {
+          const snap = await db.collection('usernames')
+            .orderBy(firebase.firestore.FieldPath.documentId())
+            .startAt(q.toLowerCase())
+            .endAt(q.toLowerCase() + '')
+            .limit(4)
+            .get();
+          const names = [];
+          snap.forEach(function (doc) { names.push(doc.id); });
+          return names;
+        } catch (e) { return []; }
+      }
+
+      function renderResults(stations, places, users) {
         results.innerHTML = '';
         const hasStations = stations.length > 0;
         const hasPlaces   = places.length > 0;
+        const hasUsers    = users && users.length > 0;
 
-        if (!hasStations && !hasPlaces) {
+        if (!hasStations && !hasPlaces && !hasUsers) {
           results.innerHTML = '<p class="search-no-results">No results found</p>';
           results.classList.add('open');
           return;
@@ -3553,6 +3738,29 @@ out center tags;`.trim();
           });
         }
 
+        if (hasUsers) {
+          const label = document.createElement('div');
+          label.className = 'search-group-label';
+          label.textContent = 'Users';
+          results.appendChild(label);
+
+          users.forEach(function (username) {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            const color = avatarColor(username);
+            const initial = (username[0] || '?').toUpperCase();
+            item.innerHTML =
+              '<div class="avatar-circle" style="background:' + color + '">' + escapeHTML(initial) + '</div>' +
+              '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
+            item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
+            item.addEventListener('click', function () {
+              closeSearch();
+              openUserProfile(username);
+            });
+            results.appendChild(item);
+          });
+        }
+
         results.classList.add('open');
       }
 
@@ -3569,17 +3777,16 @@ out center tags;`.trim();
 
         // Show station results immediately
         const stationMatches = searchStations(q);
+        if (stationMatches.length > 0) renderResults(stationMatches, [], []);
 
-        // Debounce geocoding
+        // Debounce geocoding + user search
         debounceTimer = setTimeout(async function () {
-          const placeMatches = await geocodeQuery(q);
-          renderResults(stationMatches, placeMatches);
+          const [placeMatches, userMatches] = await Promise.all([
+            geocodeQuery(q),
+            searchUsers(q)
+          ]);
+          renderResults(stationMatches, placeMatches, userMatches);
         }, 400);
-
-        // Show stations while waiting for geocode
-        if (stationMatches.length > 0) {
-          renderResults(stationMatches, []);
-        }
       });
     }
 
@@ -4149,7 +4356,7 @@ out center tags;`.trim();
     }
 
     function closeAllPanels() {
-      ['history-panel', 'leaderboard-panel', 'cheapest-panel'].forEach(function (id) {
+      ['history-panel', 'leaderboard-panel', 'cheapest-panel', 'user-profile-panel'].forEach(function (id) {
         document.getElementById(id).classList.remove('open');
       });
       document.getElementById('panel-backdrop').classList.remove('visible');
@@ -4310,6 +4517,167 @@ out center tags;`.trim();
     }
 
     // ── BOOT ──────────────────────────────────────────────────────────
+    // ── AVATAR HELPERS ────────────────────────────────────────────────
+    var avatarCache = {};  // username → { color, url }
+
+    function avatarColor(username) {
+      var palette = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#43a047','#6d4c41','#1565c0','#d81b60','#f57f17'];
+      var hash = 0;
+      for (var i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      return palette[Math.abs(hash) % palette.length];
+    }
+
+    function renderAvatarEl(el, username, avatarUrl) {
+      var color = avatarColor(username);
+      el.style.background = color;
+      el.textContent = (username[0] || '?').toUpperCase();
+      if (avatarUrl) {
+        el.innerHTML = '<img src="' + escapeHTML(avatarUrl) + '" alt="' + escapeHTML(username) + '" />';
+        el.style.background = 'none';
+      }
+    }
+
+    // ── USER PROFILE PANEL ────────────────────────────────────────────
+    function closeUserProfile() {
+      document.getElementById('user-profile-panel').classList.remove('open');
+      document.getElementById('panel-backdrop').classList.remove('visible');
+    }
+
+    async function openUserProfile(username) {
+      if (!db) return;
+      const panel   = document.getElementById('user-profile-panel');
+      const feed    = document.getElementById('user-profile-feed');
+      const nameEl  = document.getElementById('user-profile-name');
+      const metaEl  = document.getElementById('user-profile-meta');
+      const avatarEl = document.getElementById('user-profile-avatar-large');
+      const uploadHint = document.getElementById('avatar-upload-hint');
+      const isOwnProfile = (username === currentUsername);
+
+      // Render immediately
+      nameEl.textContent = username;
+      metaEl.textContent = 'Loading…';
+      feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
+      renderAvatarEl(avatarEl, username, avatarCache[username]?.url);
+
+      // Show upload hint only on own profile
+      uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
+      if (isOwnProfile) {
+        avatarEl.onclick = function () {
+          document.getElementById('avatar-file-input').click();
+        };
+      } else {
+        avatarEl.onclick = null;
+      }
+
+      // Open panel
+      closeAllPanels();
+      panel.classList.add('open');
+      document.getElementById('panel-backdrop').classList.add('visible');
+
+      try {
+        // Fetch user doc
+        const userDoc = await db.collection('usernames').doc(username).get();
+        var joinText = '';
+        var avatarUrl = null;
+        if (userDoc.exists) {
+          const d = userDoc.data();
+          const joinDate = d.created_at?.toDate?.();
+          if (joinDate) joinText = 'Joined ' + joinDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          avatarUrl = d.avatar_url || null;
+          if (avatarUrl) {
+            avatarCache[username] = { url: avatarUrl };
+            renderAvatarEl(avatarEl, username, avatarUrl);
+          }
+        }
+
+        // Fetch their reports (no orderBy to avoid index requirement — sort client-side)
+        const snap = await db.collectionGroup('reports')
+          .where('username', '==', username)
+          .limit(40)
+          .get();
+
+        const reports = [];
+        snap.forEach(function (doc) { reports.push({ id: doc.id, ...doc.data() }); });
+        reports.sort(function (a, b) {
+          return (b.created_at?.toMillis?.() || 0) - (a.created_at?.toMillis?.() || 0);
+        });
+
+        const priceCount = reports.filter(function (r) { return r.price_cents; }).length;
+        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' price' + (priceCount !== 1 ? 's' : '') + ' logged';
+
+        feed.innerHTML = '';
+        if (reports.length === 0) {
+          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
+          return;
+        }
+
+        const fuelLabels = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
+        reports.forEach(function (r) {
+          if (!r.price_cents && !r.comment) return;
+          const feature = stationsGeoJSON && stationsGeoJSON.features.find(function (f) {
+            return String(f.properties.id) === String(r.station_id);
+          });
+          const stationName = feature ? (feature.properties.name || feature.properties.brand || 'Gas Station') : 'Gas Station';
+          const stationAddr = feature?.properties?.address || '';
+          const date = r.created_at?.toDate?.() || new Date();
+
+          const row = document.createElement('div');
+          row.className = 'user-report-row';
+          row.innerHTML =
+            '<div><span class="user-report-station-name">' + escapeHTML(stationName) + '</span>' +
+            (stationAddr ? ' <span class="user-report-addr">· ' + escapeHTML(stationAddr) + '</span>' : '') + '</div>' +
+            (r.price_cents ? '<div class="report-price-badge" style="margin:6px 0 4px">' + escapeHTML(fuelLabels[r.fuel_type] || r.fuel_type) + ' $' + (r.price_cents / 100).toFixed(2) + '</div>' : '') +
+            (r.comment ? '<p class="report-comment" style="margin:4px 0">' + escapeHTML(r.comment) + '</p>' : '') +
+            '<div class="user-report-meta">' + timeAgo(date) + '</div>';
+
+          if (r.station_id && feature) {
+            row.addEventListener('click', function () {
+              closeAllPanels();
+              map.flyTo({ center: feature.geometry.coordinates, zoom: 16, duration: 900, essential: true });
+              map.once('moveend', function () { openSheet(feature.properties); });
+            });
+          }
+          feed.appendChild(row);
+        });
+
+      } catch (e) {
+        console.error('openUserProfile error:', e);
+        feed.innerHTML = '<p class="no-data-msg">Could not load profile.</p>';
+      }
+    }
+
+    // ── AVATAR UPLOAD ─────────────────────────────────────────────────
+    async function uploadAvatar(file) {
+      if (!storage || !currentDeviceId || !currentUsername) return;
+      if (!file.type.startsWith('image/')) { showToast('Please pick an image file'); return; }
+      showToast('Uploading photo…');
+      try {
+        const ref = storage.ref('avatars/' + currentDeviceId);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await db.collection('usernames').doc(currentUsername).update({ avatar_url: url });
+        avatarCache[currentUsername] = { url: url };
+        // Re-render avatar in open profile
+        const avatarEl = document.getElementById('user-profile-avatar-large');
+        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, url);
+        showToast('Profile photo updated!');
+      } catch (e) {
+        console.error('Avatar upload failed:', e);
+        showToast('Upload failed — try again');
+      }
+    }
+
+    function setupUserProfile() {
+      document.getElementById('user-profile-close').addEventListener('click', function () {
+        document.getElementById('user-profile-panel').classList.remove('open');
+        document.getElementById('panel-backdrop').classList.remove('visible');
+      });
+      document.getElementById('avatar-file-input').addEventListener('change', function () {
+        if (this.files[0]) uploadAvatar(this.files[0]);
+        this.value = '';
+      });
+    }
+
     function setupInstallBanner() {
       const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
       const isStandalone = window.navigator.standalone === true;
@@ -4344,6 +4712,7 @@ out center tags;`.trim();
       setupLeaderboard();
       setupCheapestNearby();
       checkAdmin();
+      setupUserProfile();
       setupInstallBanner();
 
       // Backdrop tap closes whichever panel is open
