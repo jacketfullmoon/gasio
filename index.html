@@ -222,6 +222,92 @@
     }
     #nice-burst.sad.pop { animation: nicePop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
+    /* ── IMAGE CROP MODAL ───────────────────────────────────────── */
+    #crop-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 35000;
+      background: rgba(0,0,0,0.94);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+    }
+    #crop-modal.open { display: flex; }
+    #crop-modal-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin: 0;
+    }
+    #crop-viewport {
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      border: 3px solid rgba(255,255,255,0.8);
+      flex-shrink: 0;
+      touch-action: none;
+      cursor: grab;
+    }
+    #crop-viewport:active { cursor: grabbing; }
+    #crop-img {
+      position: absolute;
+      top: 0; left: 0;
+      transform-origin: top left;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+    #crop-zoom-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #crop-slider {
+      width: 150px;
+      accent-color: #d32f2f;
+    }
+    .crop-z-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.55);
+      background: transparent;
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    #crop-actions {
+      display: flex;
+      gap: 14px;
+    }
+    #crop-cancel-btn {
+      padding: 11px 26px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.45);
+      background: transparent;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #crop-use-btn {
+      padding: 11px 30px;
+      border-radius: 50px;
+      border: none;
+      background: #d32f2f;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
     #sheet-backdrop {
       position: fixed;
@@ -1450,7 +1536,7 @@
     }
     #search-toggle:active { background: var(--surface); }
 
-    #search-bar {
+    #search-bar, #search-bar-users {
       display: none;
       align-items: center;
       background: var(--bg);
@@ -1459,9 +1545,9 @@
       overflow: hidden;
       width: 272px;
     }
-    #search-bar.open { display: flex; }
+    #search-bar.open, #search-bar-users.open { display: flex; }
 
-    #search-input {
+    #search-input, #search-input-users {
       flex: 1;
       border: none;
       outline: none;
@@ -1473,11 +1559,12 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    #search-input::placeholder { color: var(--text3); }
-    /* Remove native clear button on webkit */
-    #search-input::-webkit-search-cancel-button { display: none; }
+    #search-input::placeholder,
+    #search-input-users::placeholder { color: var(--text3); }
+    #search-input::-webkit-search-cancel-button,
+    #search-input-users::-webkit-search-cancel-button { display: none; }
 
-    #search-clear {
+    #search-clear, #search-clear-users {
       background: none;
       border: none;
       font-size: 20px;
@@ -1486,9 +1573,9 @@
       cursor: pointer;
       line-height: 1;
     }
-    #search-clear:active { color: var(--text); }
+    #search-clear:active, #search-clear-users:active { color: var(--text); }
 
-    #search-results {
+    #search-results, #search-results-users {
       display: none;
       background: var(--bg);
       border-radius: 12px;
@@ -1498,7 +1585,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
-    #search-results.open { display: block; }
+    #search-results.open, #search-results-users.open { display: block; }
 
     .search-group-label {
       font-size: 10px;
@@ -1554,7 +1641,9 @@
     @media (prefers-color-scheme: dark) {
       #search-toggle,
       #search-bar,
+      #search-bar-users,
       #search-results,
+      #search-results-users,
       #filter-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
     }
 
@@ -1979,6 +2068,22 @@
   <!-- Hidden file input for avatar upload -->
   <input type="file" id="avatar-file-input" accept="image/*" style="display:none" />
 
+  <div id="crop-modal">
+    <p id="crop-modal-title">Move and scale</p>
+    <div id="crop-viewport">
+      <img id="crop-img" draggable="false" alt="" />
+    </div>
+    <div id="crop-zoom-row">
+      <button class="crop-z-btn" id="crop-zoom-out">−</button>
+      <input type="range" id="crop-slider" />
+      <button class="crop-z-btn" id="crop-zoom-in">+</button>
+    </div>
+    <div id="crop-actions">
+      <button id="crop-cancel-btn">Cancel</button>
+      <button id="crop-use-btn">Use Photo</button>
+    </div>
+  </div>
+
   <!-- User profile panel -->
   <div id="user-profile-panel">
     <div id="user-profile-panel-header">
@@ -2055,6 +2160,11 @@
       <button id="search-clear" aria-label="Clear">×</button>
     </div>
     <div id="search-results"></div>
+    <div id="search-bar-users">
+      <input id="search-input-users" type="search" placeholder="Search users…" autocomplete="off" />
+      <button id="search-clear-users" aria-label="Clear users">×</button>
+    </div>
+    <div id="search-results-users"></div>
     <div id="filter-panel">
       <div id="filter-toggle-row">
         <button id="filter-toggle-btn">Filter by price</button>
@@ -3301,20 +3411,22 @@ out center tags;`.trim();
         btn.textContent = 'Posting…';
 
         try {
-          await db
-            .collection('station_reports')
-            .doc(currentStationId)
-            .collection('reports')
-            .add({
-              fuel_type:   hasPrice ? fuelType : null,
-              price_cents: hasPrice ? Math.round(priceVal * 100) : null,
-              comment:     hasComment ? comment : null,
-              reply_count: 0,
-              username:    currentUsername || 'Anonymous',
-              device_id:   currentDeviceId || null,
-              station_id:  currentStationId,
-              created_at:  firebase.firestore.FieldValue.serverTimestamp()
-            });
+          const reportData = {
+            fuel_type:   hasPrice ? fuelType : null,
+            price_cents: hasPrice ? Math.round(priceVal * 100) : null,
+            comment:     hasComment ? comment : null,
+            reply_count: 0,
+            username:    currentUsername || 'Anonymous',
+            device_id:   currentDeviceId || null,
+            station_id:  currentStationId,
+            created_at:  firebase.firestore.FieldValue.serverTimestamp()
+          };
+          await db.collection('station_reports').doc(currentStationId).collection('reports').add(reportData);
+
+          // Mirror to user_activity for fast profile queries (no index needed)
+          if (currentUsername) {
+            await db.collection('user_activity').doc(currentUsername).collection('reports').add(reportData);
+          }
 
           setRateLimit(currentStationId, 'report');
           if (hasPrice) {
@@ -3581,19 +3693,25 @@ out center tags;`.trim();
 
     // ── SEARCH ────────────────────────────────────────────────────────
     function setupSearch() {
-      const widget   = document.getElementById('search-widget');
-      const toggle   = document.getElementById('search-toggle');
-      const bar      = document.getElementById('search-bar');
-      const input    = document.getElementById('search-input');
-      const clearBtn = document.getElementById('search-clear');
-      const results  = document.getElementById('search-results');
+      const widget        = document.getElementById('search-widget');
+      const toggle        = document.getElementById('search-toggle');
+      const bar           = document.getElementById('search-bar');
+      const input         = document.getElementById('search-input');
+      const clearBtn      = document.getElementById('search-clear');
+      const results       = document.getElementById('search-results');
+      const barUsers      = document.getElementById('search-bar-users');
+      const inputUsers    = document.getElementById('search-input-users');
+      const clearBtnUsers = document.getElementById('search-clear-users');
+      const resultsUsers  = document.getElementById('search-results-users');
 
-      let debounceTimer = null;
+      let debounceTimer     = null;
+      let debounceUserTimer = null;
       let isOpen = false;
 
       function openSearch() {
         isOpen = true;
         bar.classList.add('open');
+        barUsers.classList.add('open');
         document.getElementById('filter-panel').classList.add('open');
         input.focus();
       }
@@ -3601,10 +3719,15 @@ out center tags;`.trim();
       function closeSearch() {
         isOpen = false;
         bar.classList.remove('open');
+        barUsers.classList.remove('open');
         results.classList.remove('open');
         results.innerHTML = '';
+        resultsUsers.classList.remove('open');
+        resultsUsers.innerHTML = '';
         input.value = '';
+        inputUsers.value = '';
         clearTimeout(debounceTimer);
+        clearTimeout(debounceUserTimer);
         document.getElementById('filter-panel').classList.remove('open');
       }
 
@@ -3613,6 +3736,14 @@ out center tags;`.trim();
       });
 
       clearBtn.addEventListener('click', function () { closeSearch(); });
+
+      // Users clear button only clears the user search, not the whole widget
+      clearBtnUsers.addEventListener('click', function () {
+        inputUsers.value = '';
+        resultsUsers.classList.remove('open');
+        resultsUsers.innerHTML = '';
+        clearTimeout(debounceUserTimer);
+      });
 
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isOpen) closeSearch();
@@ -3671,13 +3802,12 @@ out center tags;`.trim();
         } catch (e) { return []; }
       }
 
-      function renderResults(stations, places, users) {
+      function renderResults(stations, places) {
         results.innerHTML = '';
         const hasStations = stations.length > 0;
         const hasPlaces   = places.length > 0;
-        const hasUsers    = users && users.length > 0;
 
-        if (!hasStations && !hasPlaces && !hasUsers) {
+        if (!hasStations && !hasPlaces) {
           results.innerHTML = '<p class="search-no-results">No results found</p>';
           results.classList.add('open');
           return;
@@ -3738,33 +3868,10 @@ out center tags;`.trim();
           });
         }
 
-        if (hasUsers) {
-          const label = document.createElement('div');
-          label.className = 'search-group-label';
-          label.textContent = 'Users';
-          results.appendChild(label);
-
-          users.forEach(function (username) {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            const color = avatarColor(username);
-            const initial = (username[0] || '?').toUpperCase();
-            item.innerHTML =
-              '<div class="avatar-circle" style="background:' + color + '">' + escapeHTML(initial) + '</div>' +
-              '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
-            item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
-            item.addEventListener('click', function () {
-              closeSearch();
-              openUserProfile(username);
-            });
-            results.appendChild(item);
-          });
-        }
-
         results.classList.add('open');
       }
 
-      // ── Input handler
+      // ── Stations / address input handler
       input.addEventListener('input', function () {
         const q = this.value.trim();
         clearTimeout(debounceTimer);
@@ -3777,16 +3884,51 @@ out center tags;`.trim();
 
         // Show station results immediately
         const stationMatches = searchStations(q);
-        if (stationMatches.length > 0) renderResults(stationMatches, [], []);
+        if (stationMatches.length > 0) renderResults(stationMatches, []);
 
-        // Debounce geocoding + user search
+        // Debounce geocoding
         debounceTimer = setTimeout(async function () {
-          const [placeMatches, userMatches] = await Promise.all([
-            geocodeQuery(q),
-            searchUsers(q)
-          ]);
-          renderResults(stationMatches, placeMatches, userMatches);
+          const placeMatches = await geocodeQuery(q);
+          renderResults(stationMatches, placeMatches);
         }, 400);
+      });
+
+      // ── Users input handler
+      inputUsers.addEventListener('input', function () {
+        const q = this.value.trim();
+        clearTimeout(debounceUserTimer);
+
+        if (q.length < 2) {
+          resultsUsers.classList.remove('open');
+          resultsUsers.innerHTML = '';
+          return;
+        }
+
+        debounceUserTimer = setTimeout(async function () {
+          const userMatches = await searchUsers(q);
+          resultsUsers.innerHTML = '';
+          if (!userMatches.length) {
+            resultsUsers.innerHTML = '<p class="search-no-results">No users found</p>';
+            resultsUsers.classList.add('open');
+            return;
+          }
+          userMatches.forEach(function (username) {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            const color = avatarColor(username);
+            const initial = (username[0] || '?').toUpperCase();
+            item.innerHTML =
+              '<div class="avatar-circle" style="background:' + color + '">' + escapeHTML(initial) + '</div>' +
+              '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
+            item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
+            item.addEventListener('click', function () {
+              closeSearch();
+              openUserProfile(username);
+            });
+            resultsUsers.appendChild(item);
+          });
+          resultsUsers.classList.add('open');
+        }, 300);
       });
     }
 
@@ -4590,9 +4732,10 @@ out center tags;`.trim();
           }
         }
 
-        // Fetch their reports (no orderBy to avoid index requirement — sort client-side)
-        const snap = await db.collectionGroup('reports')
-          .where('username', '==', username)
+        // Query user_activity — direct path, no index needed
+        const snap = await db.collection('user_activity').doc(username)
+          .collection('reports')
+          .orderBy('created_at', 'desc')
           .limit(40)
           .get();
 
@@ -4646,18 +4789,56 @@ out center tags;`.trim();
       }
     }
 
-    // ── AVATAR UPLOAD ─────────────────────────────────────────────────
-    async function uploadAvatar(file) {
+    // ── AVATAR UPLOAD + CROP ──────────────────────────────────────────
+    var CROP_PX = 260;
+    var _crop = { natW: 0, natH: 0, x: 0, y: 0, scale: 1, minScale: 1,
+                  dragging: false, ltx: 0, lty: 0, objUrl: null,
+                  activePointers: 0 };
+    var _pinch0 = null;
+
+    function _applyCrop() {
+      const img = document.getElementById('crop-img');
+      img.style.width  = _crop.natW + 'px';
+      img.style.height = _crop.natH + 'px';
+      img.style.transform = 'translate(' + _crop.x + 'px,' + _crop.y + 'px) scale(' + _crop.scale + ')';
+    }
+
+    function _clampCrop() {
+      const sw = _crop.natW * _crop.scale;
+      const sh = _crop.natH * _crop.scale;
+      _crop.x = Math.max(CROP_PX - sw, Math.min(0, _crop.x));
+      _crop.y = Math.max(CROP_PX - sh, Math.min(0, _crop.y));
+    }
+
+    function initCropper(file) {
+      if (_crop.objUrl) URL.revokeObjectURL(_crop.objUrl);
+      _crop.objUrl = URL.createObjectURL(file);
+      const img = document.getElementById('crop-img');
+      img.onload = function () {
+        _crop.natW = img.naturalWidth;
+        _crop.natH = img.naturalHeight;
+        const minScale = Math.max(CROP_PX / _crop.natW, CROP_PX / _crop.natH);
+        _crop.scale = minScale;
+        _crop.minScale = minScale;
+        _crop.x = (CROP_PX - _crop.natW * minScale) / 2;
+        _crop.y = (CROP_PX - _crop.natH * minScale) / 2;
+        const sl = document.getElementById('crop-slider');
+        sl.min = minScale; sl.max = minScale * 4; sl.step = 0.001; sl.value = minScale;
+        _applyCrop();
+        document.getElementById('crop-modal').classList.add('open');
+      };
+      img.src = _crop.objUrl;
+    }
+
+    async function uploadAvatar(blob) {
       if (!storage || !currentDeviceId || !currentUsername) return;
-      if (!file.type.startsWith('image/')) { showToast('Please pick an image file'); return; }
-      showToast('Uploading photo…');
+      showToast('Uploading…');
       try {
         const ref = storage.ref('avatars/' + currentDeviceId);
-        await ref.put(file);
+        await ref.put(blob, { contentType: 'image/jpeg' });
         const url = await ref.getDownloadURL();
         await db.collection('usernames').doc(currentUsername).update({ avatar_url: url });
         avatarCache[currentUsername] = { url: url };
-        // Re-render avatar in open profile
         const avatarEl = document.getElementById('user-profile-avatar-large');
         if (avatarEl) renderAvatarEl(avatarEl, currentUsername, url);
         showToast('Profile photo updated!');
@@ -4673,8 +4854,110 @@ out center tags;`.trim();
         document.getElementById('panel-backdrop').classList.remove('visible');
       });
       document.getElementById('avatar-file-input').addEventListener('change', function () {
-        if (this.files[0]) uploadAvatar(this.files[0]);
+        if (this.files[0]) initCropper(this.files[0]);
         this.value = '';
+      });
+
+      // Crop modal wiring
+      const vp = document.getElementById('crop-viewport');
+
+      // Pointer drag (single finger / mouse)
+      vp.addEventListener('pointerdown', function (e) {
+        _crop.activePointers++;
+        if (_crop.activePointers > 1) { _crop.dragging = false; return; }
+        e.preventDefault();
+        _crop.dragging = true;
+        _crop.ltx = e.clientX; _crop.lty = e.clientY;
+        vp.setPointerCapture(e.pointerId);
+      });
+      vp.addEventListener('pointermove', function (e) {
+        if (!_crop.dragging || _crop.activePointers > 1) return;
+        _crop.x += e.clientX - _crop.ltx;
+        _crop.y += e.clientY - _crop.lty;
+        _crop.ltx = e.clientX; _crop.lty = e.clientY;
+        _clampCrop(); _applyCrop();
+      });
+      vp.addEventListener('pointerup',     function () { _crop.activePointers = Math.max(0, _crop.activePointers - 1); _crop.dragging = false; });
+      vp.addEventListener('pointercancel', function () { _crop.activePointers = Math.max(0, _crop.activePointers - 1); _crop.dragging = false; });
+
+      // Pinch-to-zoom (two fingers)
+      vp.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          _crop.dragging = false;
+          const t0 = e.touches[0], t1 = e.touches[1];
+          const rect = vp.getBoundingClientRect();
+          _pinch0 = {
+            dist:  Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY),
+            scale: _crop.scale,
+            pivX:  (t0.clientX + t1.clientX) / 2 - rect.left,
+            pivY:  (t0.clientY + t1.clientY) / 2 - rect.top
+          };
+        }
+      }, { passive: false });
+      vp.addEventListener('touchmove', function (e) {
+        if (e.touches.length !== 2 || !_pinch0) return;
+        e.preventDefault();
+        const t0 = e.touches[0], t1 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+        const newScale = Math.max(_crop.minScale, Math.min(_crop.minScale * 4, _pinch0.scale * (dist / _pinch0.dist)));
+        const ipx = (_pinch0.pivX - _crop.x) / _crop.scale;
+        const ipy = (_pinch0.pivY - _crop.y) / _crop.scale;
+        _crop.scale = newScale;
+        _crop.x = _pinch0.pivX - ipx * newScale;
+        _crop.y = _pinch0.pivY - ipy * newScale;
+        _clampCrop(); _applyCrop();
+        document.getElementById('crop-slider').value = newScale;
+      }, { passive: false });
+      vp.addEventListener('touchend', function () { _pinch0 = null; });
+
+      // Zoom slider
+      document.getElementById('crop-slider').addEventListener('input', function () {
+        const ns = parseFloat(this.value);
+        const cx = CROP_PX / 2, cy = CROP_PX / 2;
+        const ipx = (cx - _crop.x) / _crop.scale;
+        const ipy = (cy - _crop.y) / _crop.scale;
+        _crop.scale = ns;
+        _crop.x = cx - ipx * ns; _crop.y = cy - ipy * ns;
+        _clampCrop(); _applyCrop();
+      });
+
+      // +/− buttons
+      document.getElementById('crop-zoom-in').addEventListener('click', function () {
+        const sl = document.getElementById('crop-slider');
+        sl.value = Math.min(parseFloat(sl.max), parseFloat(sl.value) + parseFloat(sl.max) * 0.1);
+        sl.dispatchEvent(new Event('input'));
+      });
+      document.getElementById('crop-zoom-out').addEventListener('click', function () {
+        const sl = document.getElementById('crop-slider');
+        sl.value = Math.max(parseFloat(sl.min), parseFloat(sl.value) - parseFloat(sl.max) * 0.1);
+        sl.dispatchEvent(new Event('input'));
+      });
+
+      // Cancel
+      document.getElementById('crop-cancel-btn').addEventListener('click', function () {
+        document.getElementById('crop-modal').classList.remove('open');
+        if (_crop.objUrl) { URL.revokeObjectURL(_crop.objUrl); _crop.objUrl = null; }
+      });
+
+      // Confirm — extract cropped square to 300×300 canvas, upload
+      document.getElementById('crop-use-btn').addEventListener('click', function () {
+        const OUT = 300;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = OUT;
+        const ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2);
+        ctx.clip();
+        const srcX = -_crop.x / _crop.scale;
+        const srcY = -_crop.y / _crop.scale;
+        const srcW =  CROP_PX / _crop.scale;
+        const srcH =  CROP_PX / _crop.scale;
+        const img = document.getElementById('crop-img');
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUT, OUT);
+        document.getElementById('crop-modal').classList.remove('open');
+        if (_crop.objUrl) { URL.revokeObjectURL(_crop.objUrl); _crop.objUrl = null; }
+        canvas.toBlob(function (blob) { uploadAvatar(blob); }, 'image/jpeg', 0.85);
       });
     }
 
