@@ -2427,8 +2427,13 @@ out center tags;`.trim();
                   .where('uid', '==', user.uid).limit(1).get();
                 if (!snap.empty) {
                   currentUsername = snap.docs[0].id;
-                  isAdmin = snap.docs[0].data().is_admin === true;
+                  const udata = snap.docs[0].data();
+                  isAdmin = udata.is_admin === true;
                   if (isAdmin) revealAdminButton();
+                  if (udata.avatar_emoji) {
+                    avatarCache[currentUsername] = { emoji: udata.avatar_emoji };
+                  }
+                  updateProfileBtn();
                 }
               } catch (e) { /* non-fatal */ }
             }
@@ -4761,13 +4766,34 @@ out center tags;`.trim();
       }
     }
 
+    // ── PROFILE BUTTON ────────────────────────────────────────────────
+    var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+    function updateProfileBtn() {
+      const btn = document.getElementById('profile-btn');
+      if (!btn) return;
+      const emoji = currentUsername && avatarCache[currentUsername]?.emoji;
+      btn.innerHTML = emoji
+        ? '<span style="font-size:22px;line-height:1">' + emoji + '</span>'
+        : PROFILE_BTN_SVG;
+    }
+
     // ── EMOJI AVATAR ──────────────────────────────────────────────────
     var AVATAR_EMOJIS = [
+      // faces
       '😀','😄','😎','🥳','🤩','🥰','😏','🙃',
-      '😤','🤯','👻','💀','🤖','👽','🎃','🐱',
-      '🐶','🦊','🐼','🐨','🦁','🐯','🐻','🦋',
-      '🦄','🐲','🌵','🌊','⚡','🔥','🎸','⚽',
-      '🏀','🎮','🚀','🌟','👑','💎','🎉','🍕'
+      '😤','🤯','👻','💀','🤖','👽','🎃','🫡',
+      // animals
+      '🐱','🐶','🦊','🐼','🐨','🦁','🐯','🐻',
+      '🐸','🐺','🐮','🐷','🐧','🦉','🦅','🦜',
+      '🦋','🐝','🐢','🦎','🐬','🦈','🐙','🦄',
+      '🦝','🦔','🦭','🐲','🦌','🐓','🦩','🐿️',
+      // plants & green life
+      '🌿','🌱','🌲','🌴','🌵','🍀','🌸','🌺',
+      '🌻','🌹','🍄','🌾','🎋','🪴','🌳','🍃',
+      // sky, space & weather
+      '⭐','🌟','💫','✨','🌙','🌛','🌕','☀️',
+      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍'
     ];
 
     async function saveAvatarEmoji(emoji) {
@@ -4777,6 +4803,7 @@ out center tags;`.trim();
         avatarCache[currentUsername] = { emoji: emoji };
         const avatarEl = document.getElementById('user-profile-avatar-large');
         if (avatarEl) renderAvatarEl(avatarEl, currentUsername, emoji);
+        updateProfileBtn();
         showToast('Avatar updated!');
       } catch (e) {
         console.error('Avatar save failed:', e);
