@@ -1662,6 +1662,78 @@
 
     /* Green match dot label on map */
     /* (layer rendered by MapLibre, no extra CSS needed) */
+    /* ── IOS INSTALL BANNER ─────────────────────────────────────── */
+    #install-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 19999;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      animation: bannerSlideUp 0.4s cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+    #install-banner.visible { display: flex; }
+    @keyframes bannerSlideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    #install-banner-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    #install-banner-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text1);
+    }
+    #install-banner-title img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+    #install-banner-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    #install-banner-steps {
+      font-size: 13px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    #install-banner-steps svg {
+      flex-shrink: 0;
+      color: #007aff;
+    }
+    #install-banner::after {
+      content: '';
+      position: absolute;
+      bottom: calc(-8px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -1785,6 +1857,26 @@
   <!-- Toast notification -->
   <div id="toast"></div>
   <div id="nice-burst"></div>
+
+  <!-- iOS install banner -->
+  <div id="install-banner">
+    <div id="install-banner-top">
+      <div id="install-banner-title">
+        <img src="icon.png" alt="GasIO icon" />
+        Add GasIO to your Home Screen
+      </div>
+      <button id="install-banner-close" aria-label="Dismiss">×</button>
+    </div>
+    <div id="install-banner-steps">
+      Tap
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      in Safari, then tap <strong>"Add to Home Screen"</strong>
+    </div>
+  </div>
 
   <!-- Profile / history button -->
   <button id="profile-btn" aria-label="My reports">
@@ -4218,6 +4310,27 @@ out center tags;`.trim();
     }
 
     // ── BOOT ──────────────────────────────────────────────────────────
+    function setupInstallBanner() {
+      const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone === true;
+      const isSafari     = /safari/i.test(navigator.userAgent) && !/chrome|crios|fxios|android/i.test(navigator.userAgent);
+      if (!isIOS || isStandalone || !isSafari) return;
+
+      const DISMISS_KEY = 'install_banner_dismissed';
+      const dismissed   = localStorage.getItem(DISMISS_KEY);
+      if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+
+      // Show after a short delay so the map loads first
+      setTimeout(function () {
+        const banner = document.getElementById('install-banner');
+        banner.classList.add('visible');
+        document.getElementById('install-banner-close').addEventListener('click', function () {
+          banner.classList.remove('visible');
+          localStorage.setItem(DISMISS_KEY, Date.now().toString());
+        });
+      }, 2500);
+    }
+
     function boot() {
       initFirebase();
       initMap();
@@ -4231,6 +4344,7 @@ out center tags;`.trim();
       setupLeaderboard();
       setupCheapestNearby();
       checkAdmin();
+      setupInstallBanner();
 
       // Backdrop tap closes whichever panel is open
       document.getElementById('panel-backdrop').addEventListener('click', closeAllPanels);
