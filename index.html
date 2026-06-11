@@ -2341,6 +2341,7 @@ out center tags;`.trim();
     let stationReports = [];      // full fetched report list for current station
     let stationReplies = [];      // corresponding replies
     let visibleCount  = 3;        // how many reports are currently shown
+    let currentProfileUser = null; // username whose profile panel is open
 
     // ── FIREBASE INIT ────────────────────────────────────────────────
     function initFirebase() {
@@ -4695,6 +4696,7 @@ out center tags;`.trim();
 
     async function openUserProfile(username) {
       if (!db) return;
+      currentProfileUser = username;
       const panel   = document.getElementById('user-profile-panel');
       const feed    = document.getElementById('user-profile-feed');
       const nameEl  = document.getElementById('user-profile-name');
@@ -4709,15 +4711,11 @@ out center tags;`.trim();
       feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
       renderAvatarEl(avatarEl, username, avatarCache[username]?.url);
 
-      // Show upload hint only on own profile
-      uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
-      if (isOwnProfile) {
-        avatarEl.onclick = function () {
-          document.getElementById('avatar-file-input').click();
-        };
-      } else {
-        avatarEl.onclick = null;
-      }
+      // Show upload hint only on own profile — clear onclick for others
+      if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
+      avatarEl.onclick = isOwnProfile
+        ? function () { document.getElementById('avatar-file-input').click(); }
+        : null;
 
       // Open panel
       closeAllPanels();
@@ -4839,6 +4837,7 @@ out center tags;`.trim();
 
     async function uploadAvatar(blob) {
       if (!storage || !currentDeviceId || !currentUsername) return;
+      if (currentProfileUser !== currentUsername) return;
       showToast('Uploading…');
       try {
         const ref = storage.ref('avatars/' + currentDeviceId);
@@ -4861,7 +4860,7 @@ out center tags;`.trim();
         document.getElementById('panel-backdrop').classList.remove('visible');
       });
       document.getElementById('avatar-file-input').addEventListener('change', function () {
-        if (this.files[0]) initCropper(this.files[0]);
+        if (this.files[0] && currentProfileUser === currentUsername) initCropper(this.files[0]);
         this.value = '';
       });
 
