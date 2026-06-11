@@ -222,91 +222,68 @@
     }
     #nice-burst.sad.pop { animation: nicePop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-    /* ── IMAGE CROP MODAL ───────────────────────────────────────── */
-    #crop-modal {
+    /* ── EMOJI PICKER ───────────────────────────────────────────── */
+    #emoji-picker-modal {
       position: fixed;
       inset: 0;
       z-index: 35000;
-      background: rgba(0,0,0,0.94);
+      background: rgba(0,0,0,0.5);
       display: none;
-      flex-direction: column;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      gap: 22px;
     }
-    #crop-modal.open { display: flex; }
-    #crop-modal-title {
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      margin: 0;
+    #emoji-picker-modal.open { display: flex; }
+    #emoji-picker-card {
+      background: var(--bg);
+      border-radius: 22px 22px 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding-bottom: env(safe-area-inset-bottom);
+      animation: slideUpSheet 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    #crop-viewport {
-      width: 260px;
-      height: 260px;
-      border-radius: 50%;
-      overflow: hidden;
-      position: relative;
-      border: 3px solid rgba(255,255,255,0.8);
-      flex-shrink: 0;
-      touch-action: none;
-      cursor: grab;
+    @keyframes slideUpSheet {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
     }
-    #crop-viewport:active { cursor: grabbing; }
-    #crop-img {
-      position: absolute;
-      top: 0; left: 0;
-      transform-origin: top left;
-      user-select: none;
-      -webkit-user-drag: none;
-      pointer-events: none;
-    }
-    #crop-zoom-row {
+    #emoji-picker-header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
     }
-    #crop-slider {
-      width: 150px;
-      accent-color: #d32f2f;
-    }
-    .crop-z-btn {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.55);
-      background: transparent;
-      color: #fff;
-      font-size: 22px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0;
-    }
-    #crop-actions {
-      display: flex;
-      gap: 14px;
-    }
-    #crop-cancel-btn {
-      padding: 11px 26px;
-      border-radius: 50px;
-      border: 2px solid rgba(255,255,255,0.45);
-      background: transparent;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    #crop-use-btn {
-      padding: 11px 30px;
-      border-radius: 50px;
-      border: none;
-      background: #d32f2f;
-      color: #fff;
-      font-size: 15px;
+    #emoji-picker-title {
       font-weight: 700;
-      cursor: pointer;
+      font-size: 15px;
+      color: var(--text1);
     }
+    #emoji-picker-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    #emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+      padding: 14px 16px 20px;
+    }
+    .emoji-opt {
+      font-size: 28px;
+      text-align: center;
+      padding: 7px 2px;
+      border-radius: 10px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: background 0.12s;
+      line-height: 1.2;
+    }
+    .emoji-opt:active { background: var(--surface); }
 
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
     #sheet-backdrop {
@@ -2065,22 +2042,13 @@
   <div id="toast"></div>
   <div id="nice-burst"></div>
 
-  <!-- Hidden file input for avatar upload -->
-  <input type="file" id="avatar-file-input" accept="image/*" style="display:none" />
-
-  <div id="crop-modal">
-    <p id="crop-modal-title">Move and scale</p>
-    <div id="crop-viewport">
-      <img id="crop-img" draggable="false" alt="" />
-    </div>
-    <div id="crop-zoom-row">
-      <button class="crop-z-btn" id="crop-zoom-out">−</button>
-      <input type="range" id="crop-slider" />
-      <button class="crop-z-btn" id="crop-zoom-in">+</button>
-    </div>
-    <div id="crop-actions">
-      <button id="crop-cancel-btn">Cancel</button>
-      <button id="crop-use-btn">Use Photo</button>
+  <div id="emoji-picker-modal">
+    <div id="emoji-picker-card">
+      <div id="emoji-picker-header">
+        <span id="emoji-picker-title">Choose your avatar</span>
+        <button id="emoji-picker-close">×</button>
+      </div>
+      <div id="emoji-grid"></div>
     </div>
   </div>
 
@@ -2089,7 +2057,7 @@
     <div id="user-profile-panel-header">
       <div id="user-profile-info">
         <div id="user-profile-avatar-large" class="avatar-circle-large">
-          <div class="avatar-upload-hint" id="avatar-upload-hint" style="display:none">📷</div>
+          <div class="avatar-upload-hint" id="avatar-upload-hint" style="display:none">✏️</div>
         </div>
         <div>
           <div id="user-profile-name"></div>
@@ -3917,9 +3885,11 @@ out center tags;`.trim();
             const item = document.createElement('div');
             item.className = 'search-result-item';
             const color = avatarColor(username);
-            const initial = (username[0] || '?').toUpperCase();
+            const cachedEmoji = avatarCache[username]?.emoji || null;
+            const avatarContent = cachedEmoji ? escapeHTML(cachedEmoji) : escapeHTML((username[0] || '?').toUpperCase());
+            const avatarBg = cachedEmoji ? color + '55' : color;
             item.innerHTML =
-              '<div class="avatar-circle" style="background:' + color + '">' + escapeHTML(initial) + '</div>' +
+              '<div class="avatar-circle" style="background:' + avatarBg + '">' + avatarContent + '</div>' +
               '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
             item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
             item.addEventListener('click', function () {
@@ -4661,7 +4631,7 @@ out center tags;`.trim();
 
     // ── BOOT ──────────────────────────────────────────────────────────
     // ── AVATAR HELPERS ────────────────────────────────────────────────
-    var avatarCache = {};  // username → { color, url }
+    var avatarCache = {};  // username → { emoji }
 
     function avatarColor(username) {
       var palette = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#43a047','#6d4c41','#1565c0','#d81b60','#f57f17'];
@@ -4670,18 +4640,15 @@ out center tags;`.trim();
       return palette[Math.abs(hash) % palette.length];
     }
 
-    function renderAvatarEl(el, username, avatarUrl) {
-      // Remove only text nodes and <img> tags — preserve <div> children (e.g. upload hint)
+    function renderAvatarEl(el, username, avatarEmoji) {
+      // Remove only text nodes — preserve <div> children (upload hint)
       Array.from(el.childNodes).forEach(function (node) {
-        if (node.nodeType === 3 || node.nodeName === 'IMG') el.removeChild(node);
+        if (node.nodeType === 3) el.removeChild(node);
       });
       var color = avatarColor(username);
-      if (avatarUrl) {
-        const img = document.createElement('img');
-        img.src = avatarUrl;
-        img.alt = username;
-        el.insertBefore(img, el.firstChild);
-        el.style.background = 'transparent';
+      if (avatarEmoji) {
+        el.insertBefore(document.createTextNode(avatarEmoji), el.firstChild);
+        el.style.background = color + '55'; // tinted, so emoji pops
       } else {
         el.insertBefore(document.createTextNode((username[0] || '?').toUpperCase()), el.firstChild);
         el.style.background = color;
@@ -4709,12 +4676,12 @@ out center tags;`.trim();
       nameEl.textContent = username;
       metaEl.textContent = 'Loading…';
       feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
-      renderAvatarEl(avatarEl, username, avatarCache[username]?.url);
+      renderAvatarEl(avatarEl, username, avatarCache[username]?.emoji);
 
-      // Show upload hint only on own profile — clear onclick for others
+      // Show edit hint only on own profile — clear onclick for others
       if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
       avatarEl.onclick = isOwnProfile
-        ? function () { document.getElementById('avatar-file-input').click(); }
+        ? function () { document.getElementById('emoji-picker-modal').classList.add('open'); }
         : null;
 
       // Open panel
@@ -4731,10 +4698,10 @@ out center tags;`.trim();
           const d = userDoc.data();
           const joinDate = d.created_at?.toDate?.();
           if (joinDate) joinText = 'Joined ' + joinDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          avatarUrl = d.avatar_url || null;
-          if (avatarUrl) {
-            avatarCache[username] = { url: avatarUrl };
-            renderAvatarEl(avatarEl, username, avatarUrl);
+          const avatarEmoji = d.avatar_emoji || null;
+          if (avatarEmoji) {
+            avatarCache[username] = { emoji: avatarEmoji };
+            renderAvatarEl(avatarEl, username, avatarEmoji);
           }
         }
 
@@ -4794,63 +4761,26 @@ out center tags;`.trim();
       }
     }
 
-    // ── AVATAR UPLOAD + CROP ──────────────────────────────────────────
-    var CROP_PX = 260;
-    var _crop = { natW: 0, natH: 0, x: 0, y: 0, scale: 1, minScale: 1,
-                  dragging: false, ltx: 0, lty: 0, objUrl: null,
-                  activePointers: 0 };
-    var _pinch0 = null;
+    // ── EMOJI AVATAR ──────────────────────────────────────────────────
+    var AVATAR_EMOJIS = [
+      '😀','😄','😎','🥳','🤩','🥰','😏','🙃',
+      '😤','🤯','👻','💀','🤖','👽','🎃','🐱',
+      '🐶','🦊','🐼','🐨','🦁','🐯','🐻','🦋',
+      '🦄','🐲','🌵','🌊','⚡','🔥','🎸','⚽',
+      '🏀','🎮','🚀','🌟','👑','💎','🎉','🍕'
+    ];
 
-    function _applyCrop() {
-      const img = document.getElementById('crop-img');
-      img.style.width  = _crop.natW + 'px';
-      img.style.height = _crop.natH + 'px';
-      img.style.transform = 'translate(' + _crop.x + 'px,' + _crop.y + 'px) scale(' + _crop.scale + ')';
-    }
-
-    function _clampCrop() {
-      const sw = _crop.natW * _crop.scale;
-      const sh = _crop.natH * _crop.scale;
-      _crop.x = Math.max(CROP_PX - sw, Math.min(0, _crop.x));
-      _crop.y = Math.max(CROP_PX - sh, Math.min(0, _crop.y));
-    }
-
-    function initCropper(file) {
-      if (_crop.objUrl) URL.revokeObjectURL(_crop.objUrl);
-      _crop.objUrl = URL.createObjectURL(file);
-      const img = document.getElementById('crop-img');
-      img.onload = function () {
-        _crop.natW = img.naturalWidth;
-        _crop.natH = img.naturalHeight;
-        const minScale = Math.max(CROP_PX / _crop.natW, CROP_PX / _crop.natH);
-        _crop.scale = minScale;
-        _crop.minScale = minScale;
-        _crop.x = (CROP_PX - _crop.natW * minScale) / 2;
-        _crop.y = (CROP_PX - _crop.natH * minScale) / 2;
-        const sl = document.getElementById('crop-slider');
-        sl.min = minScale; sl.max = minScale * 4; sl.step = 0.001; sl.value = minScale;
-        _applyCrop();
-        document.getElementById('crop-modal').classList.add('open');
-      };
-      img.src = _crop.objUrl;
-    }
-
-    async function uploadAvatar(blob) {
-      if (!storage || !currentDeviceId || !currentUsername) return;
-      if (currentProfileUser !== currentUsername) return;
-      showToast('Uploading…');
+    async function saveAvatarEmoji(emoji) {
+      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
       try {
-        const ref = storage.ref('avatars/' + currentDeviceId);
-        await ref.put(blob, { contentType: 'image/jpeg' });
-        const url = await ref.getDownloadURL();
-        await db.collection('usernames').doc(currentUsername).update({ avatar_url: url });
-        avatarCache[currentUsername] = { url: url };
+        await db.collection('usernames').doc(currentUsername).update({ avatar_emoji: emoji });
+        avatarCache[currentUsername] = { emoji: emoji };
         const avatarEl = document.getElementById('user-profile-avatar-large');
-        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, url);
-        showToast('Profile photo updated!');
+        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, emoji);
+        showToast('Avatar updated!');
       } catch (e) {
-        console.error('Avatar upload failed:', e);
-        showToast('Upload failed — try again');
+        console.error('Avatar save failed:', e);
+        showToast('Could not save — try again');
       }
     }
 
@@ -4859,111 +4789,26 @@ out center tags;`.trim();
         document.getElementById('user-profile-panel').classList.remove('open');
         document.getElementById('panel-backdrop').classList.remove('visible');
       });
-      document.getElementById('avatar-file-input').addEventListener('change', function () {
-        if (this.files[0] && currentProfileUser === currentUsername) initCropper(this.files[0]);
-        this.value = '';
+
+      // Build emoji grid
+      const grid = document.getElementById('emoji-grid');
+      AVATAR_EMOJIS.forEach(function (emoji) {
+        const btn = document.createElement('button');
+        btn.className = 'emoji-opt';
+        btn.textContent = emoji;
+        btn.addEventListener('click', function () {
+          document.getElementById('emoji-picker-modal').classList.remove('open');
+          saveAvatarEmoji(emoji);
+        });
+        grid.appendChild(btn);
       });
 
-      // Crop modal wiring
-      const vp = document.getElementById('crop-viewport');
-
-      // Pointer drag (single finger / mouse)
-      vp.addEventListener('pointerdown', function (e) {
-        _crop.activePointers++;
-        if (_crop.activePointers > 1) { _crop.dragging = false; return; }
-        e.preventDefault();
-        _crop.dragging = true;
-        _crop.ltx = e.clientX; _crop.lty = e.clientY;
-        vp.setPointerCapture(e.pointerId);
+      // Close picker on × or backdrop tap
+      document.getElementById('emoji-picker-close').addEventListener('click', function () {
+        document.getElementById('emoji-picker-modal').classList.remove('open');
       });
-      vp.addEventListener('pointermove', function (e) {
-        if (!_crop.dragging || _crop.activePointers > 1) return;
-        _crop.x += e.clientX - _crop.ltx;
-        _crop.y += e.clientY - _crop.lty;
-        _crop.ltx = e.clientX; _crop.lty = e.clientY;
-        _clampCrop(); _applyCrop();
-      });
-      vp.addEventListener('pointerup',     function () { _crop.activePointers = Math.max(0, _crop.activePointers - 1); _crop.dragging = false; });
-      vp.addEventListener('pointercancel', function () { _crop.activePointers = Math.max(0, _crop.activePointers - 1); _crop.dragging = false; });
-
-      // Pinch-to-zoom (two fingers)
-      vp.addEventListener('touchstart', function (e) {
-        if (e.touches.length === 2) {
-          e.preventDefault();
-          _crop.dragging = false;
-          const t0 = e.touches[0], t1 = e.touches[1];
-          const rect = vp.getBoundingClientRect();
-          _pinch0 = {
-            dist:  Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY),
-            scale: _crop.scale,
-            pivX:  (t0.clientX + t1.clientX) / 2 - rect.left,
-            pivY:  (t0.clientY + t1.clientY) / 2 - rect.top
-          };
-        }
-      }, { passive: false });
-      vp.addEventListener('touchmove', function (e) {
-        if (e.touches.length !== 2 || !_pinch0) return;
-        e.preventDefault();
-        const t0 = e.touches[0], t1 = e.touches[1];
-        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
-        const newScale = Math.max(_crop.minScale, Math.min(_crop.minScale * 4, _pinch0.scale * (dist / _pinch0.dist)));
-        const ipx = (_pinch0.pivX - _crop.x) / _crop.scale;
-        const ipy = (_pinch0.pivY - _crop.y) / _crop.scale;
-        _crop.scale = newScale;
-        _crop.x = _pinch0.pivX - ipx * newScale;
-        _crop.y = _pinch0.pivY - ipy * newScale;
-        _clampCrop(); _applyCrop();
-        document.getElementById('crop-slider').value = newScale;
-      }, { passive: false });
-      vp.addEventListener('touchend', function () { _pinch0 = null; });
-
-      // Zoom slider
-      document.getElementById('crop-slider').addEventListener('input', function () {
-        const ns = parseFloat(this.value);
-        const cx = CROP_PX / 2, cy = CROP_PX / 2;
-        const ipx = (cx - _crop.x) / _crop.scale;
-        const ipy = (cy - _crop.y) / _crop.scale;
-        _crop.scale = ns;
-        _crop.x = cx - ipx * ns; _crop.y = cy - ipy * ns;
-        _clampCrop(); _applyCrop();
-      });
-
-      // +/− buttons
-      document.getElementById('crop-zoom-in').addEventListener('click', function () {
-        const sl = document.getElementById('crop-slider');
-        sl.value = Math.min(parseFloat(sl.max), parseFloat(sl.value) + parseFloat(sl.max) * 0.1);
-        sl.dispatchEvent(new Event('input'));
-      });
-      document.getElementById('crop-zoom-out').addEventListener('click', function () {
-        const sl = document.getElementById('crop-slider');
-        sl.value = Math.max(parseFloat(sl.min), parseFloat(sl.value) - parseFloat(sl.max) * 0.1);
-        sl.dispatchEvent(new Event('input'));
-      });
-
-      // Cancel
-      document.getElementById('crop-cancel-btn').addEventListener('click', function () {
-        document.getElementById('crop-modal').classList.remove('open');
-        if (_crop.objUrl) { URL.revokeObjectURL(_crop.objUrl); _crop.objUrl = null; }
-      });
-
-      // Confirm — extract cropped square to 300×300 canvas, upload
-      document.getElementById('crop-use-btn').addEventListener('click', function () {
-        const OUT = 300;
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = OUT;
-        const ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2);
-        ctx.clip();
-        const srcX = -_crop.x / _crop.scale;
-        const srcY = -_crop.y / _crop.scale;
-        const srcW =  CROP_PX / _crop.scale;
-        const srcH =  CROP_PX / _crop.scale;
-        const img = document.getElementById('crop-img');
-        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUT, OUT);
-        document.getElementById('crop-modal').classList.remove('open');
-        if (_crop.objUrl) { URL.revokeObjectURL(_crop.objUrl); _crop.objUrl = null; }
-        canvas.toBlob(function (blob) { uploadAvatar(blob); }, 'image/jpeg', 0.85);
+      document.getElementById('emoji-picker-modal').addEventListener('click', function (e) {
+        if (e.target === this) this.classList.remove('open');
       });
     }
 
