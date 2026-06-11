@@ -284,6 +284,37 @@
       line-height: 1.2;
     }
     .emoji-opt:active { background: var(--surface); }
+    #color-swatches-section {
+      padding: 8px 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+    #color-swatches-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    #color-swatches-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .color-swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.12s, border-color 0.12s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .color-swatch:active { transform: scale(0.88); }
+    .color-swatch.selected {
+      border-color: var(--text);
+      transform: scale(1.18);
+    }
 
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
     #sheet-backdrop {
@@ -1951,9 +1982,12 @@
   <div id="history-panel" role="dialog" aria-modal="true">
     <div class="panel-handle"></div>
     <div id="history-header">
-      <div>
-        <h2 id="history-title">My Reports</h2>
-        <div class="history-subtitle" id="history-subtitle"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="history-avatar" class="avatar-circle" style="width:40px;height:40px;font-size:20px;flex-shrink:0"></div>
+        <div>
+          <h2 id="history-title">My Reports</h2>
+          <div class="history-subtitle" id="history-subtitle"></div>
+        </div>
       </div>
       <div id="history-header-actions">
         <button id="signout-btn">Sign out</button>
@@ -2049,6 +2083,10 @@
         <button id="emoji-picker-close">×</button>
       </div>
       <div id="emoji-grid"></div>
+      <div id="color-swatches-section">
+        <div id="color-swatches-label">Background color</div>
+        <div id="color-swatches-row"></div>
+      </div>
     </div>
   </div>
 
@@ -2430,10 +2468,13 @@ out center tags;`.trim();
                   const udata = snap.docs[0].data();
                   isAdmin = udata.is_admin === true;
                   if (isAdmin) revealAdminButton();
-                  if (udata.avatar_emoji) {
-                    avatarCache[currentUsername] = { emoji: udata.avatar_emoji };
+                  if (udata.avatar_emoji || udata.avatar_color) {
+                    avatarCache[currentUsername] = {
+                      emoji: udata.avatar_emoji || null,
+                      color: udata.avatar_color || null
+                    };
+                    updateProfileBtn();
                   }
-                  updateProfileBtn();
                 }
               } catch (e) { /* non-fatal */ }
             }
@@ -3891,8 +3932,9 @@ out center tags;`.trim();
             item.className = 'search-result-item';
             const color = avatarColor(username);
             const cachedEmoji = avatarCache[username]?.emoji || null;
+            const cachedColor = avatarCache[username]?.color || null;
             const avatarContent = cachedEmoji ? escapeHTML(cachedEmoji) : escapeHTML((username[0] || '?').toUpperCase());
-            const avatarBg = cachedEmoji ? color + '55' : color;
+            const avatarBg = cachedColor || (cachedEmoji ? color + '55' : color);
             item.innerHTML =
               '<div class="avatar-circle" style="background:' + avatarBg + '">' + avatarContent + '</div>' +
               '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
@@ -4073,6 +4115,8 @@ out center tags;`.trim();
       title.textContent    = currentUsername ? currentUsername + "'s Reports" : 'My Reports';
       subtitle.textContent = '';
       feed.innerHTML       = '<p class="no-data-msg">Loading…</p>';
+      const histAvatar = document.getElementById('history-avatar');
+      if (histAvatar && currentUsername) renderAvatarEl(histAvatar, currentUsername, avatarCache[currentUsername]?.emoji, avatarCache[currentUsername]?.color);
       panel.classList.add('open');
       document.getElementById('panel-backdrop').classList.add('visible');
 
@@ -4636,7 +4680,14 @@ out center tags;`.trim();
 
     // ── BOOT ──────────────────────────────────────────────────────────
     // ── AVATAR HELPERS ────────────────────────────────────────────────
-    var avatarCache = {};  // username → { emoji }
+    var avatarCache = {};  // username → { emoji, color }
+
+    var AVATAR_COLORS = [
+      null,       // auto (hash-based)
+      '#e53935', '#e91e63', '#8e24aa', '#3949ab', '#1e88e5',
+      '#039be5', '#00acc1', '#00897b', '#43a047', '#c0ca33',
+      '#f9a825', '#fb8c00', '#f4511e', '#6d4c41', '#546e7a'
+    ];
 
     function avatarColor(username) {
       var palette = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#43a047','#6d4c41','#1565c0','#d81b60','#f57f17'];
@@ -4645,18 +4696,18 @@ out center tags;`.trim();
       return palette[Math.abs(hash) % palette.length];
     }
 
-    function renderAvatarEl(el, username, avatarEmoji) {
+    function renderAvatarEl(el, username, avatarEmoji, savedColor) {
       // Remove only text nodes — preserve <div> children (upload hint)
       Array.from(el.childNodes).forEach(function (node) {
         if (node.nodeType === 3) el.removeChild(node);
       });
-      var color = avatarColor(username);
+      var autoColor = avatarColor(username);
       if (avatarEmoji) {
         el.insertBefore(document.createTextNode(avatarEmoji), el.firstChild);
-        el.style.background = color + '55'; // tinted, so emoji pops
+        el.style.background = savedColor || (autoColor + '55');
       } else {
         el.insertBefore(document.createTextNode((username[0] || '?').toUpperCase()), el.firstChild);
-        el.style.background = color;
+        el.style.background = savedColor || autoColor;
       }
     }
 
@@ -4681,13 +4732,11 @@ out center tags;`.trim();
       nameEl.textContent = username;
       metaEl.textContent = 'Loading…';
       feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
-      renderAvatarEl(avatarEl, username, avatarCache[username]?.emoji);
+      renderAvatarEl(avatarEl, username, avatarCache[username]?.emoji, avatarCache[username]?.color);
 
       // Show edit hint only on own profile — clear onclick for others
       if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
-      avatarEl.onclick = isOwnProfile
-        ? function () { document.getElementById('emoji-picker-modal').classList.add('open'); }
-        : null;
+      avatarEl.onclick = isOwnProfile ? openEmojiPicker : null;
 
       // Open panel
       closeAllPanels();
@@ -4704,10 +4753,9 @@ out center tags;`.trim();
           const joinDate = d.created_at?.toDate?.();
           if (joinDate) joinText = 'Joined ' + joinDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
           const avatarEmoji = d.avatar_emoji || null;
-          if (avatarEmoji) {
-            avatarCache[username] = { emoji: avatarEmoji };
-            renderAvatarEl(avatarEl, username, avatarEmoji);
-          }
+          const savedAvatarColor = d.avatar_color || null;
+          avatarCache[username] = { emoji: avatarEmoji, color: savedAvatarColor };
+          renderAvatarEl(avatarEl, username, avatarEmoji, savedAvatarColor);
         }
 
         // Fetch all recent reports and filter by username client-side — no index needed
@@ -4766,18 +4814,6 @@ out center tags;`.trim();
       }
     }
 
-    // ── PROFILE BUTTON ────────────────────────────────────────────────
-    var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-
-    function updateProfileBtn() {
-      const btn = document.getElementById('profile-btn');
-      if (!btn) return;
-      const emoji = currentUsername && avatarCache[currentUsername]?.emoji;
-      btn.innerHTML = emoji
-        ? '<span style="font-size:22px;line-height:1">' + emoji + '</span>'
-        : PROFILE_BTN_SVG;
-    }
-
     // ── EMOJI AVATAR ──────────────────────────────────────────────────
     var AVATAR_EMOJIS = [
       // faces
@@ -4796,13 +4832,80 @@ out center tags;`.trim();
       '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍'
     ];
 
+    var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+    function updateProfileBtn() {
+      const btn = document.getElementById('profile-btn');
+      if (!btn || !currentUsername) return;
+      const emoji = avatarCache[currentUsername]?.emoji || null;
+      const color = avatarCache[currentUsername]?.color || null;
+      if (emoji) {
+        btn.innerHTML = '<span style="font-size:22px;line-height:1;pointer-events:none">' + emoji + '</span>';
+        btn.style.background = color || (avatarColor(currentUsername) + '55');
+      } else {
+        btn.innerHTML = PROFILE_BTN_SVG;
+        btn.style.background = '';
+      }
+    }
+
+    function openEmojiPicker() {
+      if (currentProfileUser !== currentUsername) return;
+      buildColorSwatches();
+      document.getElementById('emoji-picker-modal').classList.add('open');
+    }
+
+    function buildColorSwatches() {
+      const row = document.getElementById('color-swatches-row');
+      row.innerHTML = '';
+      const currentColor = avatarCache[currentUsername]?.color || null;
+      const autoColor = avatarColor(currentUsername);
+
+      AVATAR_COLORS.forEach(function (color) {
+        const btn = document.createElement('button');
+        btn.className = 'color-swatch';
+        btn.style.background = color || autoColor;
+        if (color === null) {
+          btn.innerHTML = '<span style="font-size:9px;color:rgba(255,255,255,0.9);font-weight:700;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.4)">A</span>';
+          btn.title = 'Auto (default)';
+        }
+        if (color === currentColor) btn.classList.add('selected');
+        btn.addEventListener('click', function () {
+          row.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
+          btn.classList.add('selected');
+          saveAvatarColor(color);
+        });
+        row.appendChild(btn);
+      });
+    }
+
+    async function saveAvatarColor(color) {
+      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
+      try {
+        await db.collection('usernames').doc(currentUsername).update({ avatar_color: color || '' });
+        const cachedEmoji = avatarCache[currentUsername]?.emoji || null;
+        avatarCache[currentUsername] = { emoji: cachedEmoji, color: color };
+        const avatarEl = document.getElementById('user-profile-avatar-large');
+        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, cachedEmoji, color);
+        const histAvatar = document.getElementById('history-avatar');
+        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, cachedEmoji, color);
+        updateProfileBtn();
+        showToast('Color updated!');
+      } catch (e) {
+        console.error('Color save failed:', e);
+        showToast('Could not save — try again');
+      }
+    }
+
     async function saveAvatarEmoji(emoji) {
       if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
       try {
         await db.collection('usernames').doc(currentUsername).update({ avatar_emoji: emoji });
-        avatarCache[currentUsername] = { emoji: emoji };
+        const savedColor = avatarCache[currentUsername]?.color || null;
+        avatarCache[currentUsername] = { emoji: emoji, color: savedColor };
         const avatarEl = document.getElementById('user-profile-avatar-large');
-        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, emoji);
+        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, emoji, savedColor);
+        const histAvatar = document.getElementById('history-avatar');
+        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, emoji, savedColor);
         updateProfileBtn();
         showToast('Avatar updated!');
       } catch (e) {
