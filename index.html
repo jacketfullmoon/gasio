@@ -4670,12 +4670,20 @@ out center tags;`.trim();
     }
 
     function renderAvatarEl(el, username, avatarUrl) {
+      // Remove only text nodes and <img> tags — preserve <div> children (e.g. upload hint)
+      Array.from(el.childNodes).forEach(function (node) {
+        if (node.nodeType === 3 || node.nodeName === 'IMG') el.removeChild(node);
+      });
       var color = avatarColor(username);
-      el.style.background = color;
-      el.textContent = (username[0] || '?').toUpperCase();
       if (avatarUrl) {
-        el.innerHTML = '<img src="' + escapeHTML(avatarUrl) + '" alt="' + escapeHTML(username) + '" />';
-        el.style.background = 'none';
+        const img = document.createElement('img');
+        img.src = avatarUrl;
+        img.alt = username;
+        el.insertBefore(img, el.firstChild);
+        el.style.background = 'transparent';
+      } else {
+        el.insertBefore(document.createTextNode((username[0] || '?').toUpperCase()), el.firstChild);
+        el.style.background = color;
       }
     }
 
@@ -4732,15 +4740,14 @@ out center tags;`.trim();
           }
         }
 
-        // Query user_activity — direct path, no index needed
-        const snap = await db.collection('user_activity').doc(username)
-          .collection('reports')
-          .orderBy('created_at', 'desc')
-          .limit(40)
-          .get();
+        // Fetch all recent reports and filter by username client-side — no index needed
+        const snap = await db.collectionGroup('reports').limit(500).get();
 
         const reports = [];
-        snap.forEach(function (doc) { reports.push({ id: doc.id, ...doc.data() }); });
+        snap.forEach(function (doc) {
+          const d = doc.data();
+          if (d.username === username) reports.push({ id: doc.id, ...d });
+        });
         reports.sort(function (a, b) {
           return (b.created_at?.toMillis?.() || 0) - (a.created_at?.toMillis?.() || 0);
         });
