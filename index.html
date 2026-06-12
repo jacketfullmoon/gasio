@@ -1987,7 +1987,41 @@
     .profile-badge-gold   { background: #fff8e1; color: #f9a825; border: 1px solid #ffe082; }
     .profile-badge-silver { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
     .profile-badge-bronze { background: #fbe9e7; color: #8d6e63; border: 1px solid #ffccbc; }
-    .profile-badge-hunter { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .profile-badge-hunter  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .profile-badge-pioneer { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+    .profile-badge-streak  { background: #fff3e0; color: #e64a19; border: 1px solid #ffcc80; }
+
+    .thanks-btn {
+      background: none; border: none; font-family: var(--font);
+      font-size: 12px; font-weight: 600; color: var(--text2);
+      cursor: pointer; padding: 4px 8px; border-radius: 8px;
+    }
+    .thanks-btn:active { background: var(--surface2); }
+    .thanks-btn.thanked { color: #1565c0; cursor: default; }
+
+    /* Brand filter */
+    #brand-filter-section { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+    #brand-filter-row { display: flex; align-items: center; gap: 8px; }
+    #brand-filter-toggle { background: none; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 4px 0; flex: 1; text-align: left; }
+    #brand-filter-controls { display: none; flex-direction: column; gap: 8px; margin-top: 8px; }
+    #brand-filter-controls.open { display: flex; }
+    #brand-select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font); font-size: 14px; color: var(--text); }
+    #brand-max-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
+    #brand-max-price { width: 80px; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: var(--font); }
+    #brand-apply { padding: 9px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+    #brand-clear-btn { background: none; border: none; font-size: 12px; color: var(--accent); cursor: pointer; font-family: var(--font); font-weight: 600; display: none; }
+    #brand-clear-btn.visible { display: block; }
+
+    /* Price alert */
+    #price-alert-section { border-top: 1px solid var(--border); padding: 14px 16px; display: none; }
+    #price-alert-section.visible { display: block; }
+    #price-alert-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text2); margin-bottom: 10px; }
+    #price-alert-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    #alert-fuel-select, #alert-max-price { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font); font-size: 13px; color: var(--text); }
+    #alert-max-price { width: 80px; }
+    #alert-save-btn { padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+    #alert-notify-btn { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: none; font-family: var(--font); font-size: 12px; color: var(--text2); cursor: pointer; }
+    #alert-status { font-size: 12px; color: var(--text3); margin-top: 6px; }
     #user-profile-feed {
       overflow-y: auto;
       flex: 1;
@@ -2238,6 +2272,22 @@
       </div>
       <button class="panel-close-btn" id="user-profile-close" aria-label="Close">×</button>
     </div>
+    <div id="price-alert-section">
+      <div id="price-alert-title">🔔 Price Alert</div>
+      <div id="price-alert-row">
+        <select id="alert-fuel-select">
+          <option value="regular">Regular</option>
+          <option value="mid">Mid-Grade</option>
+          <option value="premium">Premium</option>
+          <option value="diesel">Diesel</option>
+        </select>
+        <span>under $</span>
+        <input id="alert-max-price" type="number" placeholder="5.50" step="0.10" min="1" max="9.99" inputmode="decimal" />
+        <button id="alert-save-btn">Save</button>
+      </div>
+      <div id="alert-status"></div>
+      <button id="alert-notify-btn">Enable notifications</button>
+    </div>
     <div id="user-profile-feed"></div>
   </div>
 
@@ -2331,6 +2381,20 @@
           <input id="filter-max" type="number" placeholder="5.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
         </div>
         <button id="filter-apply-btn">Apply</button>
+      </div>
+      <div id="brand-filter-section">
+        <div id="brand-filter-row">
+          <button id="brand-filter-toggle">Filter by brand</button>
+          <button id="brand-clear-btn">× Clear</button>
+        </div>
+        <div id="brand-filter-controls">
+          <select id="brand-select"><option value="">Select brand…</option></select>
+          <div id="brand-max-row">
+            <span>Max price (optional):</span>
+            <span>$</span><input id="brand-max-price" type="number" placeholder="6.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
+          </div>
+          <button id="brand-apply">Show on map</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2850,6 +2914,7 @@ out center tags;`.trim();
         const geojson = await loadStations();
         stationsGeoJSON = geojson;
         addStationsToMap(geojson);
+        document.dispatchEvent(new Event('stationsLoaded'));
       } catch (e) {
         console.error('Failed to load stations:', e);
         showToast('Could not load stations. Try refreshing.');
@@ -3482,6 +3547,7 @@ out center tags;`.trim();
         '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
           '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
         '</button>' +
+        '<button class="thanks-btn' + ((report.thanked_by || []).includes(currentDeviceId) ? ' thanked' : '') + '" data-report-id="' + report.id + '">👍' + (report.thanks_count ? ' ' + report.thanks_count : '') + '</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
@@ -3584,6 +3650,22 @@ out center tags;`.trim();
           this.classList.remove('confirmed');
           this.disabled = false;
         }
+      });
+
+      // Wire thanks button
+      card.querySelector('.thanks-btn').addEventListener('click', async function () {
+        if (this.classList.contains('thanked')) return;
+        if (!db || !currentDeviceId) { showToast('Sign in to thank'); return; }
+        this.classList.add('thanked');
+        this.disabled = true;
+        try {
+          await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).update({
+            thanks_count: firebase.firestore.FieldValue.increment(1),
+            thanked_by:   firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
+          });
+          const prev = report.thanks_count || 0;
+          this.textContent = '👍 ' + (prev + 1);
+        } catch (e) { this.classList.remove('thanked'); this.disabled = false; }
       });
 
       // Wire flag "Wrong price" button
@@ -3749,17 +3831,27 @@ out center tags;`.trim();
         btn.textContent = 'Posting…';
 
         try {
+          // Check if this station has any reports yet (pioneer detection)
+          const existingSnap = await db.collection('station_reports').doc(currentStationId).collection('reports').limit(1).get();
+          const isFirstReport = existingSnap.empty;
+
           const reportData = {
-            fuel_type:   hasPrice ? fuelType : null,
-            price_cents: hasPrice ? Math.round(priceVal * 100) : null,
-            comment:     hasComment ? comment : null,
-            reply_count: 0,
-            username:    currentUsername || 'Anonymous',
-            device_id:   currentDeviceId || null,
-            station_id:  currentStationId,
-            created_at:  firebase.firestore.FieldValue.serverTimestamp()
+            fuel_type:        hasPrice ? fuelType : null,
+            price_cents:      hasPrice ? Math.round(priceVal * 100) : null,
+            comment:          hasComment ? comment : null,
+            reply_count:      0,
+            username:         currentUsername || 'Anonymous',
+            device_id:        currentDeviceId || null,
+            station_id:       currentStationId,
+            is_first_report:  isFirstReport,
+            created_at:       firebase.firestore.FieldValue.serverTimestamp()
           };
           await db.collection('station_reports').doc(currentStationId).collection('reports').add(reportData);
+          if (isFirstReport && currentUsername) {
+            await db.collection('usernames').doc(currentUsername).update({
+              pioneer_count: firebase.firestore.FieldValue.increment(1)
+            });
+          }
 
           // Mirror to user_activity for fast profile queries (no index needed)
           if (currentUsername) {
@@ -3767,7 +3859,9 @@ out center tags;`.trim();
           }
 
           setRateLimit(currentStationId, 'report');
-          if (hasPrice) {
+          if (isFirstReport) {
+            showToast('🌟 First report on this station — Pioneer badge earned!');
+          } else if (hasPrice) {
             const prevCents = currentPrices[fuelType] || null;
             const newCents  = Math.round(priceVal * 100);
             if (prevCents && newCents > prevCents) showSad();
@@ -5100,6 +5194,7 @@ out center tags;`.trim();
       // Show edit hint only on own profile — clear onclick for others
       if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
       avatarEl.onclick = isOwnProfile ? openEmojiPicker : null;
+      showPriceAlertSection(isOwnProfile);
 
       // Open panel
       closeAllPanels();
@@ -5167,6 +5262,29 @@ out center tags;`.trim();
             const medal = priceRank === 1 ? '🏆' : priceRank === 2 ? '🥈' : '🥉';
             const label = priceRank === 1 ? 'Price Hunter' : '#' + priceRank + ' Price Hunter';
             badgesEl.innerHTML += '<span class="profile-badge profile-badge-hunter">' + medal + ' ' + label + '</span>';
+          }
+          // Pioneer badge
+          const pioneerCount = reports.filter(function (r) { return r.is_first_report; }).length;
+          if (pioneerCount > 0) {
+            badgesEl.innerHTML += '<span class="profile-badge profile-badge-pioneer">🌟 Pioneer' + (pioneerCount > 1 ? ' ×' + pioneerCount : '') + '</span>';
+          }
+          // Streak badge
+          const DAY_MS = 86400000;
+          const todayMs = new Date().setHours(0,0,0,0);
+          const uniqueDays = [...new Set(reports.map(function (r) {
+            const d = r.created_at?.toDate?.();
+            return d ? new Date(d).setHours(0,0,0,0) : null;
+          }).filter(Boolean))].sort(function (a, b) { return b - a; });
+          let streak = 0;
+          if (uniqueDays.length && (uniqueDays[0] === todayMs || uniqueDays[0] === todayMs - DAY_MS)) {
+            streak = 1;
+            for (var i = 1; i < uniqueDays.length; i++) {
+              if (uniqueDays[i-1] - uniqueDays[i] === DAY_MS) streak++;
+              else break;
+            }
+          }
+          if (streak >= 2) {
+            badgesEl.innerHTML += '<span class="profile-badge profile-badge-streak">🔥 ' + streak + '-day streak</span>';
           }
         }
 
@@ -5418,6 +5536,7 @@ out center tags;`.trim();
         });
         map.getSource('stations').setData(stationsGeoJSON);
         priceViewFetched = true;
+        checkPriceAlert();
       } catch (e) {
         console.error('fetchRegularPrices error:', e);
         showToast('Could not load prices');
@@ -5454,6 +5573,138 @@ out center tags;`.trim();
       });
     }
 
+    function setupBrandFilter() {
+      const toggleBtn = document.getElementById('brand-filter-toggle');
+      const controls  = document.getElementById('brand-filter-controls');
+      const clearBtn  = document.getElementById('brand-clear-btn');
+      const applyBtn  = document.getElementById('brand-apply');
+      const select    = document.getElementById('brand-select');
+      const maxInput  = document.getElementById('brand-max-price');
+      const EMPTY     = ['in', ['get', 'id'], ['literal', ['__none__']]];
+
+      // Populate brand dropdown once stations are loaded
+      function populateBrands() {
+        if (!stationsGeoJSON) return;
+        const brands = [...new Set(
+          stationsGeoJSON.features.map(function (f) { return f.properties.brand || f.properties.name; }).filter(Boolean)
+        )].sort();
+        brands.forEach(function (b) {
+          const opt = document.createElement('option');
+          opt.value = b; opt.textContent = b;
+          select.appendChild(opt);
+        });
+      }
+      // Try now, retry once map loads
+      populateBrands();
+      document.addEventListener('stationsLoaded', populateBrands, { once: true });
+
+      toggleBtn.addEventListener('click', function () {
+        const open = controls.classList.toggle('open');
+        toggleBtn.textContent = open ? 'Hide brand filter' : 'Filter by brand';
+      });
+
+      clearBtn.addEventListener('click', function () {
+        clearBtn.classList.remove('visible');
+        if (map && map.getLayer('station-pins-match')) map.setFilter('station-pins-match', EMPTY);
+      });
+
+      applyBtn.addEventListener('click', function () {
+        const brand = select.value;
+        if (!brand) { showToast('Pick a brand first'); return; }
+        if (!map || !map.getLayer('station-pins-match')) { showToast('Map not ready yet'); return; }
+        const maxCents = maxInput.value ? Math.round(parseFloat(maxInput.value) * 100) : null;
+        const matchedIds = [];
+        (stationsGeoJSON?.features || []).forEach(function (f) {
+          const p = f.properties;
+          const nameMatch = (p.brand || p.name || '').toLowerCase() === brand.toLowerCase();
+          if (!nameMatch) return;
+          if (maxCents) {
+            const price = p.regular_price_cents || 0;
+            if (!price || price > maxCents) return;
+          }
+          matchedIds.push(p.id);
+        });
+        if (matchedIds.length === 0) {
+          showToast('No stations found for ' + brand + (maxCents ? ' under $' + (maxCents/100).toFixed(2) : ''));
+          return;
+        }
+        map.setFilter('station-pins-match', ['in', ['get', 'id'], ['literal', matchedIds]]);
+        clearBtn.classList.add('visible');
+        showToast(matchedIds.length + ' ' + brand + ' station' + (matchedIds.length === 1 ? '' : 's') + ' highlighted');
+      });
+    }
+
+    var priceAlertSettings = null; // { fuelType, maxCents }
+
+    function setupPriceAlert() {
+      const section    = document.getElementById('price-alert-section');
+      const fuelSel    = document.getElementById('alert-fuel-select');
+      const maxInput   = document.getElementById('alert-max-price');
+      const saveBtn    = document.getElementById('alert-save-btn');
+      const statusEl   = document.getElementById('alert-status');
+      const notifyBtn  = document.getElementById('alert-notify-btn');
+
+      // Load saved settings
+      try {
+        const saved = localStorage.getItem('gas_price_alert');
+        if (saved) {
+          priceAlertSettings = JSON.parse(saved);
+          fuelSel.value = priceAlertSettings.fuelType || 'regular';
+          maxInput.value = priceAlertSettings.maxCents ? (priceAlertSettings.maxCents / 100).toFixed(2) : '';
+          statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + maxInput.value;
+        }
+      } catch (e) {}
+
+      saveBtn.addEventListener('click', function () {
+        const max = parseFloat(maxInput.value);
+        if (isNaN(max) || max <= 0) { showToast('Enter a valid max price'); return; }
+        priceAlertSettings = { fuelType: fuelSel.value, maxCents: Math.round(max * 100) };
+        localStorage.setItem('gas_price_alert', JSON.stringify(priceAlertSettings));
+        statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + max.toFixed(2);
+        showToast('Price alert saved!');
+        checkPriceAlert();
+      });
+
+      notifyBtn.addEventListener('click', function () {
+        if (!('Notification' in window)) { showToast('Notifications not supported on this browser'); return; }
+        Notification.requestPermission().then(function (perm) {
+          if (perm === 'granted') { notifyBtn.textContent = '✓ Notifications enabled'; showToast('Notifications enabled!'); }
+          else showToast('Notifications blocked — check browser settings');
+        });
+      });
+
+      // Update notify button state
+      if ('Notification' in window && Notification.permission === 'granted') {
+        notifyBtn.textContent = '✓ Notifications enabled';
+      }
+    }
+
+    function showPriceAlertSection(show) {
+      const el = document.getElementById('price-alert-section');
+      if (el) el.classList.toggle('visible', show);
+    }
+
+    function checkPriceAlert() {
+      if (!priceAlertSettings || !stationsGeoJSON) return;
+      const { fuelType, maxCents } = priceAlertSettings;
+      const matches = stationsGeoJSON.features.filter(function (f) {
+        const price = f.properties.regular_price_cents;
+        return price && price <= maxCents;
+      });
+      if (matches.length === 0) return;
+      const best = matches.reduce(function (a, b) {
+        return (a.properties.regular_price_cents < b.properties.regular_price_cents) ? a : b;
+      });
+      const name = best.properties.name || best.properties.brand || 'A station';
+      const price = '$' + (best.properties.regular_price_cents / 100).toFixed(2);
+      const msg = name + ' has ' + fuelType + ' at ' + price;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('⛽ Gas Alert!', { body: msg });
+      } else {
+        showToast('⛽ Alert: ' + msg);
+      }
+    }
+
     function boot() {
       initFirebase();
       initMap();
@@ -5470,6 +5721,8 @@ out center tags;`.trim();
       setupUserProfile();
       setupInstallBanner();
       setupPriceView();
+      setupBrandFilter();
+      setupPriceAlert();
 
       // Backdrop tap closes whichever panel is open
       document.getElementById('panel-backdrop').addEventListener('click', closeAllPanels);
