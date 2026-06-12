@@ -310,6 +310,20 @@
       padding: 6px 0 0;
       text-decoration: underline;
     }
+    #emoji-reset-btn {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 8px;
+      margin: 10px 0 4px;
+      text-align: center;
+    }
+    #emoji-reset-btn:active { background: var(--surface); }
     .color-swatch {
       width: 30px;
       height: 30px;
@@ -694,6 +708,29 @@
       color: var(--text);
       word-break: break-word;
       margin-bottom: 8px;
+    }
+
+    .report-author-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+    .report-author-avatar {
+      width: 26px !important;
+      height: 26px !important;
+      font-size: 13px !important;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .report-author-name {
+      font-size: 13px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .report-author-time {
+      font-size: 11px;
+      color: var(--text3);
     }
 
     .report-meta {
@@ -1441,6 +1478,17 @@
       margin-left: 4px;
     }
     .report-admin-delete:hover { color: #d32f2f; }
+    .report-user-delete {
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 6px;
+      margin-left: auto;
+    }
+    .report-user-delete:hover { color: #d32f2f; }
     .admin-row-station {
       font-size: 12px;
       font-weight: 700;
@@ -2124,6 +2172,7 @@
         <button id="emoji-picker-close">×</button>
       </div>
       <div id="emoji-grid"></div>
+      <button id="emoji-reset-btn">Remove emoji &amp; use initials</button>
       <div id="color-swatches-section">
         <div id="color-swatches-label">Background color</div>
         <div id="color-swatches-row"></div>
@@ -3296,6 +3345,11 @@ out center tags;`.trim();
         stationReplies = await Promise.all(replyFetches);
         stationReports = reports;
         visibleCount = 3;
+
+        // Pre-fetch avatars for all report authors
+        const reportUsernames = [...new Set(reports.map(function (r) { return r.username; }).filter(Boolean))];
+        if (reportUsernames.length) await fetchAvatarBatch(reportUsernames);
+
         renderReportsBatch(stationId);
         renderTrendChart(reports, null);
 
@@ -3342,6 +3396,22 @@ out center tags;`.trim();
 
       let inner = '';
 
+      // Author row — avatar + username + time
+      if (report.username) {
+        const uEmoji = avatarCache[report.username]?.emoji || null;
+        const uColor = avatarCache[report.username]?.color || null;
+        const uAuto  = avatarColor(report.username);
+        const uBg    = uColor || (uEmoji ? uAuto + '55' : uAuto);
+        const uBody  = uEmoji ? escapeHTML(uEmoji) : escapeHTML((report.username[0] || '?').toUpperCase());
+        inner += '<div class="report-author-row">' +
+          '<div class="avatar-circle report-author-avatar" style="background:' + uBg + '" data-username="' + escapeHTML(report.username) + '">' + uBody + '</div>' +
+          '<span class="username-link report-author-name" data-username="' + escapeHTML(report.username) + '">' + escapeHTML(report.username) + '</span>' +
+          '<span class="report-author-time">' + timeAgo(date) + '</span>' +
+          '</div>';
+      } else {
+        inner += '<div class="report-author-row"><span class="report-author-time">' + timeAgo(date) + '</span></div>';
+      }
+
       // Price badge
       if (report.fuel_type && report.price_cents) {
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -3356,7 +3426,7 @@ out center tags;`.trim();
         inner += '<p class="report-comment">' + escapeHTML(report.comment) + '</p>';
       }
 
-      // Meta row
+      // Actions row
       const confirmCount = report.confirm_count || 0;
       const alreadyConfirmed = currentDeviceId &&
         (report.confirmed_by || []).includes(currentDeviceId);
@@ -3364,13 +3434,13 @@ out center tags;`.trim();
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<span class="report-time">' + timeAgo(date) + (report.username ? ' · <span class="username-link" data-username="' + escapeHTML(report.username) + '">' + escapeHTML(report.username) + '</span>' : '') + '</span>' +
         '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
           '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
         '</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
+        (report.username && report.username === currentUsername ? '<button class="report-user-delete" data-report-id="' + report.id + '" title="Delete my report">🗑</button>' : '') +
         '</div>';
 
       // Replies
@@ -3394,8 +3464,8 @@ out center tags;`.trim();
 
       card.innerHTML = inner;
 
-      // Wire username links → open profile
-      card.querySelectorAll('.username-link').forEach(function (el) {
+      // Wire username links + avatars → open profile
+      card.querySelectorAll('.username-link, .report-author-avatar').forEach(function (el) {
         el.addEventListener('click', function (e) {
           e.stopPropagation();
           openUserProfile(this.dataset.username);
@@ -3493,6 +3563,27 @@ out center tags;`.trim();
           if (!confirm('Delete this report? This cannot be undone.')) return;
           try {
             await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).delete();
+            card.remove();
+            showToast('Report deleted');
+          } catch (err) {
+            showToast('Delete failed: ' + err.message);
+          }
+        });
+      }
+
+      // Wire user self-delete button
+      const userDelBtn = card.querySelector('.report-user-delete');
+      if (userDelBtn) {
+        userDelBtn.addEventListener('click', async function () {
+          if (!confirm('Delete your report? This cannot be undone.')) return;
+          try {
+            await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).delete();
+            // Best-effort: also remove from user_activity mirror
+            if (currentUsername) {
+              const actSnap = await db.collection('user_activity').doc(currentUsername)
+                .collection('reports').where('station_id', '==', stationId).get();
+              actSnap.forEach(function (d) { d.ref.delete(); });
+            }
             card.remove();
             showToast('Report deleted');
           } catch (err) {
@@ -5069,6 +5160,7 @@ out center tags;`.trim();
         btn.classList.toggle('selected', btn.textContent === currentEmoji);
       });
       buildColorSwatches();
+      document.getElementById('emoji-reset-btn').style.display = currentEmoji ? '' : 'none';
       document.getElementById('emoji-picker-modal').classList.add('open');
     }
 
@@ -5119,6 +5211,20 @@ out center tags;`.trim();
       }
     }
 
+    async function resetAvatar() {
+      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
+      try {
+        await db.collection('usernames').doc(currentUsername).update({ avatar_emoji: '', avatar_color: '' });
+        avatarCache[currentUsername] = { emoji: null, color: null };
+        const avatarEl = document.getElementById('user-profile-avatar-large');
+        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, null, null);
+        const histAvatar = document.getElementById('history-avatar');
+        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, null, null);
+        updateProfileBtn();
+        showToast('Emoji removed');
+      } catch (e) { showToast('Could not save — try again'); }
+    }
+
     async function saveAvatarEmoji(emoji) {
       if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
       try {
@@ -5155,6 +5261,16 @@ out center tags;`.trim();
           saveAvatarEmoji(emoji);
         });
         grid.appendChild(btn);
+      });
+
+      // Remove emoji button
+      document.getElementById('emoji-reset-btn').addEventListener('click', function () {
+        grid.querySelectorAll('.emoji-opt').forEach(function (b) { b.classList.remove('selected'); });
+        document.getElementById('color-swatches-row').querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
+        const colorResetBtn = document.getElementById('color-reset-btn');
+        if (colorResetBtn) colorResetBtn.textContent = 'Using default color';
+        document.getElementById('emoji-reset-btn').style.display = 'none';
+        resetAvatar();
       });
 
       // Close picker on × or backdrop tap
