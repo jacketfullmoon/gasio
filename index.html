@@ -819,6 +819,32 @@
       border-left: 2px solid var(--border);
     }
 
+    .reply-author-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .reply-author-name {
+      font-size: 12px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .reply-author-time {
+      font-size: 11px;
+      color: var(--text3);
+    }
+    .reply-user-delete {
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 5px;
+    }
+    .reply-user-delete:hover { color: #d32f2f; }
+
     .reply-text {
       font-size: 13px;
       line-height: 1.5;
@@ -3346,8 +3372,11 @@ out center tags;`.trim();
         stationReports = reports;
         visibleCount = 3;
 
-        // Pre-fetch avatars for all report authors
-        const reportUsernames = [...new Set(reports.map(function (r) { return r.username; }).filter(Boolean))];
+        // Pre-fetch avatars for all report authors + reply authors
+        const allReplyUsernames = stationReplies.flat().map(function (r) { return r.username; }).filter(Boolean);
+        const reportUsernames = [...new Set(
+          reports.map(function (r) { return r.username; }).filter(Boolean).concat(allReplyUsernames)
+        )];
         if (reportUsernames.length) await fetchAvatarBatch(reportUsernames);
 
         renderReportsBatch(stationId);
@@ -3448,9 +3477,26 @@ out center tags;`.trim();
         inner += '<div class="replies-list">';
         replies.forEach(function (reply) {
           const rDate = reply.created_at?.toDate?.() || new Date();
-          inner += '<div class="reply-item">' +
+          const ru = reply.username || null;
+          let replyAuthor = '';
+          if (ru) {
+            const ruEmoji = avatarCache[ru]?.emoji || null;
+            const ruColor = avatarCache[ru]?.color || null;
+            const ruAuto  = avatarColor(ru);
+            const ruBg    = ruColor || (ruEmoji ? ruAuto + '55' : ruAuto);
+            const ruBody  = ruEmoji ? escapeHTML(ruEmoji) : escapeHTML((ru[0] || '?').toUpperCase());
+            const isOwner = ru === currentUsername;
+            replyAuthor = '<div class="reply-author-row">' +
+              '<div class="avatar-circle reply-author-avatar" style="width:22px;height:22px;font-size:11px;background:' + ruBg + '" data-username="' + escapeHTML(ru) + '">' + ruBody + '</div>' +
+              '<span class="username-link reply-author-name" data-username="' + escapeHTML(ru) + '">' + escapeHTML(ru) + '</span>' +
+              '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
+              (isOwner ? '<button class="reply-user-delete" data-reply-id="' + escapeHTML(reply.id) + '" data-report-id="' + escapeHTML(report.id) + '" title="Delete reply">🗑</button>' : '') +
+              '</div>';
+          }
+          inner += '<div class="reply-item" data-reply-id="' + escapeHTML(reply.id) + '">' +
+            replyAuthor +
             '<p class="reply-text">' + escapeHTML(reply.body) + '</p>' +
-            '<p class="reply-time">' + timeAgo(rDate) + '</p>' +
+            (!ru ? '<p class="reply-time">' + timeAgo(rDate) + '</p>' : '') +
             '</div>';
         });
         inner += '</div>';
@@ -3465,10 +3511,30 @@ out center tags;`.trim();
       card.innerHTML = inner;
 
       // Wire username links + avatars → open profile
-      card.querySelectorAll('.username-link, .report-author-avatar').forEach(function (el) {
+      card.querySelectorAll('.username-link, .report-author-avatar, .reply-author-avatar').forEach(function (el) {
         el.addEventListener('click', function (e) {
           e.stopPropagation();
           openUserProfile(this.dataset.username);
+        });
+      });
+
+      // Wire reply delete buttons
+      card.querySelectorAll('.reply-user-delete').forEach(function (btn) {
+        btn.addEventListener('click', async function (e) {
+          e.stopPropagation();
+          if (!confirm('Delete your reply? This cannot be undone.')) return;
+          const replyId  = this.dataset.replyId;
+          const reportId = this.dataset.reportId;
+          try {
+            const reportRef = db.collection('station_reports').doc(stationId).collection('reports').doc(reportId);
+            await reportRef.collection('replies').doc(replyId).delete();
+            await reportRef.update({ reply_count: firebase.firestore.FieldValue.increment(-1) });
+            const replyEl = card.querySelector('.reply-item[data-reply-id="' + replyId + '"]');
+            if (replyEl) replyEl.remove();
+            showToast('Reply deleted');
+          } catch (err) {
+            showToast('Delete failed: ' + err.message);
+          }
         });
       });
 
@@ -3538,6 +3604,7 @@ out center tags;`.trim();
 
           await reportRef.collection('replies').add({
             body,
+            username: currentUsername || null,
             created_at: firebase.firestore.FieldValue.serverTimestamp()
           });
           await reportRef.update({
