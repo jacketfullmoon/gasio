@@ -1529,6 +1529,27 @@
     }
 
     /* ── SEARCH WIDGET ───────────────────────────────────────────── */
+    #price-view-btn {
+      position: fixed;
+      top: calc(var(--safe-top) + 10px);
+      left: calc(var(--safe-left) + 10px);
+      z-index: 200;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text2);
+      transition: background 0.18s, color 0.18s;
+    }
+    #price-view-btn.active { background: #1565c0; color: #fff; }
+    #price-view-btn:active { opacity: 0.75; }
+
     #search-widget {
       position: fixed;
       top: calc(var(--safe-top) + 10px);
@@ -2098,6 +2119,12 @@
   </div>
 
   <!-- Toast notification -->
+  <button id="price-view-btn" aria-label="Toggle price view" title="Show gas prices">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 12C1 12 5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  </button>
   <div id="toast"></div>
   <div id="nice-burst"></div>
 
@@ -2367,6 +2394,8 @@ out center tags;`.trim();
     let sheetOpen = false;
     let stationsGeoJSON = null;
     let priceFilterActive = false;
+    let priceViewMode = false;
+    let priceViewFetched = false;
     let currentUsername = null;   // set after login
     let currentDeviceId = null;   // Firebase Auth uid
     let isAdmin = false;          // set from Firestore is_admin field
@@ -2868,7 +2897,11 @@ out center tags;`.trim();
         data: geojson,
         cluster: true,
         clusterMaxZoom: 13,
-        clusterRadius: 45
+        clusterRadius: 45,
+        clusterProperties: {
+          'price_sum':   [['+', ['accumulated'], ['get', 'price_sum']],   ['coalesce', ['get', 'regular_price_cents'], 0]],
+          'price_count': [['+', ['accumulated'], ['get', 'price_count']], ['case', ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0], 1, 0]]
+        }
       });
 
       // Cluster circles
@@ -2967,11 +3000,91 @@ out center tags;`.trim();
         }
       });
 
+      // ── PRICE VIEW LAYERS (hidden until toggled) ──────────────────
+      // Blue cluster circles
+      map.addLayer({
+        id: 'clusters-price',
+        type: 'circle',
+        source: 'stations',
+        filter: ['has', 'point_count'],
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-color': '#1565c0',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-radius': 28
+        }
+      });
+
+      // Blue cluster avg-price labels
+      map.addLayer({
+        id: 'cluster-price-label',
+        type: 'symbol',
+        source: 'stations',
+        filter: ['has', 'point_count'],
+        layout: {
+          visibility: 'none',
+          'text-font': ['Noto Sans Bold'],
+          'text-size': 11,
+          'text-field': ['case',
+            ['>', ['get', 'price_count'], 0],
+            ['concat', '$',
+              ['to-string', ['floor', ['/', ['/', ['get', 'price_sum'], ['get', 'price_count']], 100]]],
+              '.',
+              ['to-string', ['floor', ['/', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 100], 10]]]
+            ],
+            ''
+          ]
+        },
+        paint: { 'text-color': '#ffffff' }
+      });
+
+      // Blue individual pins (price view)
+      map.addLayer({
+        id: 'station-pins-price',
+        type: 'circle',
+        source: 'stations',
+        filter: ['!', ['has', 'point_count']],
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': 16,
+          'circle-color': ['case', ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0], '#1565c0', '#78909c'],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Price labels on individual pins
+      map.addLayer({
+        id: 'station-pins-price-label',
+        type: 'symbol',
+        source: 'stations',
+        filter: ['!', ['has', 'point_count']],
+        layout: {
+          visibility: 'none',
+          'text-font': ['Noto Sans Bold'],
+          'text-size': 10,
+          'text-field': ['case',
+            ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0],
+            ['concat', '$',
+              ['to-string', ['floor', ['/', ['get', 'regular_price_cents'], 100]]],
+              '.',
+              ['to-string', ['floor', ['/', ['%', ['get', 'regular_price_cents'], 100], 10]]]
+            ],
+            '?'
+          ]
+        },
+        paint: { 'text-color': '#ffffff' }
+      });
+
       // Cursor style
       map.on('mouseenter', 'station-pins', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'station-pins', () => { map.getCanvas().style.cursor = ''; });
       map.on('mouseenter', 'clusters',     () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'clusters',     () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'station-pins-price', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'station-pins-price', () => { map.getCanvas().style.cursor = ''; });
+      map.on('click', 'station-pins-price', function (e) { openSheet(e.features[0].properties); });
     }
 
     // ── BOTTOM SHEET ──────────────────────────────────────────────────
@@ -5077,6 +5190,61 @@ out center tags;`.trim();
       }, 2500);
     }
 
+    async function fetchRegularPrices() {
+      if (priceViewFetched || !db || !stationsGeoJSON) return;
+      try {
+        const snap = await db.collectionGroup('reports').limit(500).get();
+        const latest = {};
+        snap.forEach(function (doc) {
+          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
+          const d = doc.data();
+          if (d.fuel_type !== 'regular' || !d.price_cents) return;
+          const sid = d.station_id || doc.ref.parent.parent.id;
+          const ts = d.created_at ? d.created_at.toMillis() : 0;
+          if (!latest[sid] || ts > latest[sid].ts) latest[sid] = { price_cents: d.price_cents, ts };
+        });
+        stationsGeoJSON.features.forEach(function (f) {
+          const p = latest[String(f.properties.id)];
+          f.properties.regular_price_cents = p ? p.price_cents : 0;
+        });
+        map.getSource('stations').setData(stationsGeoJSON);
+        priceViewFetched = true;
+      } catch (e) {
+        console.error('fetchRegularPrices error:', e);
+        showToast('Could not load prices');
+      }
+    }
+
+    function setPriceViewLayers(on) {
+      const show = on ? 'visible' : 'none';
+      const hide = on ? 'none'    : 'visible';
+      ['clusters-price', 'cluster-price-label', 'station-pins-price', 'station-pins-price-label'].forEach(function (id) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', show);
+      });
+      ['clusters', 'cluster-count', 'station-pins-border', 'station-pins'].forEach(function (id) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', hide);
+      });
+    }
+
+    function setupPriceView() {
+      const btn = document.getElementById('price-view-btn');
+      if (!btn) return;
+      btn.addEventListener('click', async function () {
+        priceViewMode = !priceViewMode;
+        btn.classList.toggle('active', priceViewMode);
+        if (priceViewMode) {
+          btn.title = 'Back to normal view';
+          showToast('Loading prices…');
+          await fetchRegularPrices();
+          setPriceViewLayers(true);
+          showToast('Showing regular gas prices');
+        } else {
+          btn.title = 'Show gas prices';
+          setPriceViewLayers(false);
+        }
+      });
+    }
+
     function boot() {
       initFirebase();
       initMap();
@@ -5092,6 +5260,7 @@ out center tags;`.trim();
       checkAdmin();
       setupUserProfile();
       setupInstallBanner();
+      setupPriceView();
 
       // Backdrop tap closes whichever panel is open
       document.getElementById('panel-backdrop').addEventListener('click', closeAllPanels);
