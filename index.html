@@ -432,6 +432,22 @@
       justify-content: center;
     }
     #sheet-close:active { background: var(--border); }
+    .panel-close-btn {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .panel-close-btn:active { background: var(--border); }
 
     /* Sheet scrollable body */
     #sheet-body {
@@ -2661,7 +2677,7 @@ out center tags;`.trim();
             ...(hintVal ? { password_hint: hintVal } : {})
           });
 
-          currentUsername = val;
+          currentUsername = val.toLowerCase();
           currentDeviceId = uid;
           modal.classList.remove('open');
           showToast('Welcome, ' + val + '!');
@@ -2701,7 +2717,7 @@ out center tags;`.trim();
           const cred = await firebase.auth().signInWithEmailAndPassword(
             val.toLowerCase() + '@gasapp.local', pass
           );
-          currentUsername = val;
+          currentUsername = val.toLowerCase();
           currentDeviceId = cred.user.uid;
           modal.classList.remove('open');
         } catch (e) {
