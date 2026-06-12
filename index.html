@@ -1941,7 +1941,7 @@
       border-radius: 22px 22px 0 0;
       box-shadow: 0 -6px 40px rgba(0,0,0,0.18);
       background: var(--bg);
-      z-index: 9998;
+      z-index: 10003;
       transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
       display: flex;
       flex-direction: column;
@@ -3478,17 +3478,21 @@ out center tags;`.trim();
         replies.forEach(function (reply) {
           const rDate = reply.created_at?.toDate?.() || new Date();
           const ru = reply.username || null;
+          const isOwnerByUsername = ru && ru === currentUsername;
+          const isOwnerByDevice   = !ru && reply.device_id && reply.device_id === currentDeviceId;
+          const isOwner = isOwnerByUsername || isOwnerByDevice;
+          // For device-only match, use current user's avatar data as fallback
+          const displayUser = ru || (isOwnerByDevice ? currentUsername : null);
           let replyAuthor = '';
-          if (ru) {
-            const ruEmoji = avatarCache[ru]?.emoji || null;
-            const ruColor = avatarCache[ru]?.color || null;
-            const ruAuto  = avatarColor(ru);
+          if (displayUser) {
+            const ruEmoji = avatarCache[displayUser]?.emoji || null;
+            const ruColor = avatarCache[displayUser]?.color || null;
+            const ruAuto  = avatarColor(displayUser);
             const ruBg    = ruColor || (ruEmoji ? ruAuto + '55' : ruAuto);
-            const ruBody  = ruEmoji ? escapeHTML(ruEmoji) : escapeHTML((ru[0] || '?').toUpperCase());
-            const isOwner = ru === currentUsername;
+            const ruBody  = ruEmoji ? escapeHTML(ruEmoji) : escapeHTML((displayUser[0] || '?').toUpperCase());
             replyAuthor = '<div class="reply-author-row">' +
-              '<div class="avatar-circle reply-author-avatar" style="width:22px;height:22px;font-size:11px;background:' + ruBg + '" data-username="' + escapeHTML(ru) + '">' + ruBody + '</div>' +
-              '<span class="username-link reply-author-name" data-username="' + escapeHTML(ru) + '">' + escapeHTML(ru) + '</span>' +
+              '<div class="avatar-circle reply-author-avatar" style="width:22px;height:22px;font-size:11px;background:' + ruBg + '" data-username="' + escapeHTML(displayUser) + '">' + ruBody + '</div>' +
+              '<span class="username-link reply-author-name" data-username="' + escapeHTML(displayUser) + '">' + escapeHTML(displayUser) + '</span>' +
               '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
               (isOwner ? '<button class="reply-user-delete" data-reply-id="' + escapeHTML(reply.id) + '" data-report-id="' + escapeHTML(report.id) + '" title="Delete reply">🗑</button>' : '') +
               '</div>';
@@ -3496,7 +3500,7 @@ out center tags;`.trim();
           inner += '<div class="reply-item" data-reply-id="' + escapeHTML(reply.id) + '">' +
             replyAuthor +
             '<p class="reply-text">' + escapeHTML(reply.body) + '</p>' +
-            (!ru ? '<p class="reply-time">' + timeAgo(rDate) + '</p>' : '') +
+            (!displayUser ? '<p class="reply-time">' + timeAgo(rDate) + '</p>' : '') +
             '</div>';
         });
         inner += '</div>';
@@ -3605,6 +3609,7 @@ out center tags;`.trim();
           await reportRef.collection('replies').add({
             body,
             username: currentUsername || null,
+            device_id: currentDeviceId || null,
             created_at: firebase.firestore.FieldValue.serverTimestamp()
           });
           await reportRef.update({
