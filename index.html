@@ -578,6 +578,9 @@
     .price-card.age-old    { border-color: var(--border); }
     .price-card.age-old    .fuel-price { color: var(--text3); }
     .price-card.stale .fuel-label::after { content: ' · old'; color: var(--text3); }
+    .price-card.verified { border-color: #4caf50 !important; background: #f1f8e9 !important; }
+    .price-card.verified .fuel-price { color: #2e7d32 !important; }
+    .price-card.verified .fuel-age   { color: #388e3c !important; }
 
     /* ── REPORT FORM ─────────────────────────────────────────────── */
     #report-form {
@@ -3666,6 +3669,26 @@ out center tags;`.trim();
         const currentCount = parseInt(this.textContent.match(/\d+/)?.[0] || '0');
         const newCount = isNowThanked ? currentCount + 1 : Math.max(0, currentCount - 1);
         this.textContent = '👍' + (newCount ? ' ' + newCount : '') + ' Still accurate';
+
+        // Update the price card for this fuel type
+        if (report.fuel_type) {
+          const priceCard = document.getElementById('card-' + report.fuel_type);
+          if (priceCard && priceCard.classList.contains('has-data')) {
+            const ageEl = priceCard.querySelector('.fuel-age');
+            if (isNowThanked) {
+              priceCard.classList.add('verified');
+              if (ageEl && !ageEl.dataset.origText) ageEl.dataset.origText = ageEl.textContent;
+              if (ageEl) ageEl.textContent = '✓ Verified today';
+            } else {
+              priceCard.classList.remove('verified');
+              if (ageEl && ageEl.dataset.origText) {
+                ageEl.textContent = ageEl.dataset.origText;
+                delete ageEl.dataset.origText;
+              }
+            }
+          }
+        }
+
         try {
           await ref.update({
             confirm_count: firebase.firestore.FieldValue.increment(isNowThanked ? 1 : -1),
@@ -3677,6 +3700,17 @@ out center tags;`.trim();
           // Revert on failure
           this.classList.toggle('thanked', !isNowThanked);
           this.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
+          if (report.fuel_type) {
+            const priceCard = document.getElementById('card-' + report.fuel_type);
+            if (priceCard) {
+              priceCard.classList.toggle('verified', !isNowThanked);
+              const ageEl = priceCard.querySelector('.fuel-age');
+              if (ageEl && ageEl.dataset.origText) {
+                ageEl.textContent = ageEl.dataset.origText;
+                delete ageEl.dataset.origText;
+              }
+            }
+          }
         }
       });
 
