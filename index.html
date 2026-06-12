@@ -1997,20 +1997,48 @@
       cursor: pointer; padding: 4px 8px; border-radius: 8px;
     }
     .thanks-btn:active { background: var(--surface2); }
-    .thanks-btn.thanked { color: #1565c0; cursor: default; }
+    .thanks-btn.thanked { color: #2e7d32; }
 
-    /* Brand filter */
-    #brand-filter-section { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
-    #brand-filter-row { display: flex; align-items: center; gap: 8px; }
-    #brand-filter-toggle { background: none; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 4px 0; flex: 1; text-align: left; }
-    #brand-filter-controls { display: none; flex-direction: column; gap: 8px; margin-top: 8px; }
-    #brand-filter-controls.open { display: flex; }
-    #brand-select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font); font-size: 14px; color: var(--text); }
-    #brand-max-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
-    #brand-max-price { width: 80px; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: var(--font); }
-    #brand-apply { padding: 9px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
-    #brand-clear-btn { background: none; border: none; font-size: 12px; color: var(--accent); cursor: pointer; font-family: var(--font); font-weight: 600; display: none; }
+    /* Brand filter — mirrors price filter styling */
+    #brand-filter-section { border-top: 1px solid var(--border); }
+    #brand-filter-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+    }
+    #brand-filter-toggle {
+      background: none; border: none; font-family: var(--font);
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      cursor: pointer; padding: 0;
+    }
+    #brand-filter-toggle:active { opacity: 0.7; }
+    #brand-clear-btn {
+      display: none; background: none; border: none;
+      font-family: var(--font); font-size: 12px; font-weight: 600;
+      color: var(--text3); cursor: pointer; padding: 0;
+    }
     #brand-clear-btn.visible { display: block; }
+    #brand-clear-btn:active { color: var(--accent); }
+    #brand-filter-controls {
+      display: none; flex-direction: column; gap: 8px;
+      padding: 10px 14px 14px; border-top: 1px solid var(--border);
+    }
+    #brand-filter-controls.open { display: flex; }
+    #brand-select {
+      width: 100%; font-family: var(--font); font-size: 15px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 8px 10px; color: var(--text);
+    }
+    #brand-max-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
+    #brand-max-price {
+      width: 80px; padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px; font-family: var(--font);
+      background: var(--surface); color: var(--text);
+    }
+    #brand-apply {
+      padding: 9px; background: var(--accent); color: #fff;
+      border: none; border-radius: 10px; font-family: var(--font);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
 
     /* Price alert */
     #price-alert-section { border-top: 1px solid var(--border); padding: 14px 16px; display: none; }
@@ -3538,16 +3566,13 @@ out center tags;`.trim();
 
       // Actions row
       const confirmCount = report.confirm_count || 0;
-      const alreadyConfirmed = currentDeviceId &&
-        (report.confirmed_by || []).includes(currentDeviceId);
+      const alreadyConfirmed = !!(currentDeviceId &&
+        (report.confirmed_by || []).includes(currentDeviceId));
       const alreadyFlagged = currentDeviceId &&
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
-          '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
-        '</button>' +
-        '<button class="thanks-btn' + ((report.thanked_by || []).includes(currentDeviceId) ? ' thanked' : '') + '" data-report-id="' + report.id + '">👍' + (report.thanks_count ? ' ' + report.thanks_count : '') + '</button>' +
+        '<button class="thanks-btn' + (alreadyConfirmed ? ' thanked' : '') + '" data-report-id="' + report.id + '">👍' + (confirmCount ? ' ' + confirmCount : '') + ' Still accurate</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
@@ -3632,40 +3657,27 @@ out center tags;`.trim();
       });
 
       // Wire confirm "Still accurate" button
-      card.querySelector('.confirm-btn').addEventListener('click', async function () {
-        if (alreadyConfirmed) return;
-        if (!db || !currentDeviceId) { showToast('Sign in to confirm'); return; }
-        this.classList.add('confirmed');
-        this.disabled = true;
-        try {
-          await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).update({
-            confirm_count: firebase.firestore.FieldValue.increment(1),
-            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
-          });
-          const countEl = this.querySelector('.confirm-count');
-          countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
-          showToast('Marked as still accurate!');
-        } catch (e) {
-          console.error(e);
-          this.classList.remove('confirmed');
-          this.disabled = false;
-        }
-      });
-
-      // Wire thanks button
+      // Wire merged 👍 Still accurate button (toggleable)
       card.querySelector('.thanks-btn').addEventListener('click', async function () {
-        if (this.classList.contains('thanked')) return;
-        if (!db || !currentDeviceId) { showToast('Sign in to thank'); return; }
-        this.classList.add('thanked');
-        this.disabled = true;
+        if (!db || !currentDeviceId) { showToast('Sign in first'); return; }
+        const isNowThanked = !this.classList.contains('thanked');
+        this.classList.toggle('thanked', isNowThanked);
+        const ref = db.collection('station_reports').doc(stationId).collection('reports').doc(report.id);
+        const currentCount = parseInt(this.textContent.match(/\d+/)?.[0] || '0');
+        const newCount = isNowThanked ? currentCount + 1 : Math.max(0, currentCount - 1);
+        this.textContent = '👍' + (newCount ? ' ' + newCount : '') + ' Still accurate';
         try {
-          await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).update({
-            thanks_count: firebase.firestore.FieldValue.increment(1),
-            thanked_by:   firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
+          await ref.update({
+            confirm_count: firebase.firestore.FieldValue.increment(isNowThanked ? 1 : -1),
+            confirmed_by:  isNowThanked
+              ? firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
+              : firebase.firestore.FieldValue.arrayRemove(currentDeviceId)
           });
-          const prev = report.thanks_count || 0;
-          this.textContent = '👍 ' + (prev + 1);
-        } catch (e) { this.classList.remove('thanked'); this.disabled = false; }
+        } catch (e) {
+          // Revert on failure
+          this.classList.toggle('thanked', !isNowThanked);
+          this.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
+        }
       });
 
       // Wire flag "Wrong price" button
