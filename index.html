@@ -297,9 +297,18 @@
       margin-bottom: 10px;
     }
     #color-swatches-row {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
       gap: 8px;
+    }
+    #color-reset-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 6px 0 0;
+      text-decoration: underline;
     }
     .color-swatch {
       width: 30px;
@@ -1860,6 +1869,19 @@
     #user-profile-info { display: flex; align-items: center; gap: 14px; }
     #user-profile-name { font-weight: 700; font-size: 18px; color: var(--text1); }
     #user-profile-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .profile-badge-gold   { background: #fff8e1; color: #f9a825; border: 1px solid #ffe082; }
+    .profile-badge-silver { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+    .profile-badge-bronze { background: #fbe9e7; color: #8d6e63; border: 1px solid #ffccbc; }
+    .profile-badge-hunter { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
     #user-profile-feed {
       overflow-y: auto;
       flex: 1;
@@ -2089,6 +2111,7 @@
       <div id="color-swatches-section">
         <div id="color-swatches-label">Background color</div>
         <div id="color-swatches-row"></div>
+        <button id="color-reset-btn">Reset to default</button>
       </div>
     </div>
   </div>
@@ -2103,6 +2126,7 @@
         <div>
           <div id="user-profile-name"></div>
           <div id="user-profile-meta"></div>
+          <div id="user-profile-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px"></div>
         </div>
       </div>
       <button class="panel-close-btn" id="user-profile-close" aria-label="Close">×</button>
@@ -4434,6 +4458,7 @@ out center tags;`.trim();
           const snap = await db.collectionGroup('reports').limit(500).get();
           const counts = {};
           snap.forEach(function (doc) {
+            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
             const u = doc.data().username;
             if (u && u !== 'Anonymous') counts[u] = (counts[u] || 0) + 1;
           });
@@ -4477,6 +4502,7 @@ out center tags;`.trim();
           // Per user: track their single lowest price_cents in the last 30 days
           const best = {}; // { username: { price_cents, fuel_type, created_at } }
           snap.forEach(function (doc) {
+            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
             const d = doc.data();
             if (!d.username || d.username === 'Anonymous') return;
             if (!d.price_cents || !d.fuel_type) return;
@@ -4611,6 +4637,7 @@ out center tags;`.trim();
         const snap = await db.collectionGroup('reports').limit(500).get();
         const priceMap = {}; // stationId → { price_cents, created_at }
         snap.forEach(function (doc) {
+          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
           const d = doc.data();
           if (d.fuel_type !== fuelType || !d.price_cents) return;
           const sid = d.station_id || doc.ref.parent.parent.id;
@@ -4701,10 +4728,8 @@ out center tags;`.trim();
     var avatarCache = {};  // username → { emoji, color }
 
     var AVATAR_COLORS = [
-      null,       // auto (hash-based)
-      '#e53935', '#e91e63', '#8e24aa', '#3949ab', '#1e88e5',
-      '#039be5', '#00acc1', '#00897b', '#43a047', '#c0ca33',
-      '#f9a825', '#fb8c00', '#f4511e', '#6d4c41', '#546e7a'
+      '#e53935', '#e91e63', '#8e24aa', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b',
+      '#43a047', '#7cb342', '#f9a825', '#fb8c00', '#f4511e', '#795548', '#546e7a', '#37474f'
     ];
 
     function avatarColor(username) {
@@ -4802,13 +4827,50 @@ out center tags;`.trim();
         const snap = await db.collectionGroup('reports').limit(500).get();
 
         const reports = [];
+        const allCounts = {};
+        const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const bestPrice = {}; // username → lowest price_cents in last 30 days
         snap.forEach(function (doc) {
+          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
           const d = doc.data();
           if (d.username === username) reports.push({ id: doc.id, ...d });
+          if (d.username && d.username !== 'Anonymous') {
+            allCounts[d.username] = (allCounts[d.username] || 0) + 1;
+            if (d.price_cents && d.created_at?.toDate?.() >= cutoff30) {
+              if (!bestPrice[d.username] || d.price_cents < bestPrice[d.username]) {
+                bestPrice[d.username] = d.price_cents;
+              }
+            }
+          }
         });
         reports.sort(function (a, b) {
           return (b.created_at?.toMillis?.() || 0) - (a.created_at?.toMillis?.() || 0);
         });
+
+        // Determine contributor rank
+        const sortedContribs = Object.entries(allCounts).sort(function (a, b) { return b[1] - a[1]; });
+        const contribRank = sortedContribs.findIndex(function (e) { return e[0] === username; }) + 1;
+
+        // Determine price hunter rank (lowest price in last 30 days)
+        const sortedPrices = Object.entries(bestPrice).sort(function (a, b) { return a[1] - b[1]; });
+        const priceRank = sortedPrices.findIndex(function (e) { return e[0] === username; }) + 1;
+
+        // Render badges
+        const badgesEl = document.getElementById('user-profile-badges');
+        if (badgesEl) {
+          badgesEl.innerHTML = '';
+          if (contribRank >= 1 && contribRank <= 3) {
+            const medal = contribRank === 1 ? '🥇' : contribRank === 2 ? '🥈' : '🥉';
+            const cls   = contribRank === 1 ? 'profile-badge-gold' : contribRank === 2 ? 'profile-badge-silver' : 'profile-badge-bronze';
+            const label = contribRank === 1 ? 'Top Contributor' : contribRank === 2 ? '#2 Contributor' : '#3 Contributor';
+            badgesEl.innerHTML += '<span class="profile-badge ' + cls + '">' + medal + ' ' + label + '</span>';
+          }
+          if (priceRank >= 1 && priceRank <= 3 && bestPrice[username]) {
+            const medal = priceRank === 1 ? '🏆' : priceRank === 2 ? '🥈' : '🥉';
+            const label = priceRank === 1 ? 'Price Hunter' : '#' + priceRank + ' Price Hunter';
+            badgesEl.innerHTML += '<span class="profile-badge profile-badge-hunter">' + medal + ' ' + label + '</span>';
+          }
+        }
 
         const priceCount = reports.filter(function (r) { return r.price_cents; }).length;
         metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' price' + (priceCount !== 1 ? 's' : '') + ' logged';
@@ -4903,16 +4965,11 @@ out center tags;`.trim();
       const row = document.getElementById('color-swatches-row');
       row.innerHTML = '';
       const currentColor = avatarCache[currentUsername]?.color || null;
-      const autoColor = avatarColor(currentUsername);
 
       AVATAR_COLORS.forEach(function (color) {
         const btn = document.createElement('button');
         btn.className = 'color-swatch';
-        btn.style.background = color || autoColor;
-        if (color === null) {
-          btn.innerHTML = '<span style="font-size:9px;color:rgba(255,255,255,0.9);font-weight:700;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.4)">A</span>';
-          btn.title = 'Auto (default)';
-        }
+        btn.style.background = color;
         if (color === currentColor) btn.classList.add('selected');
         btn.addEventListener('click', function () {
           row.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
@@ -4921,6 +4978,16 @@ out center tags;`.trim();
         });
         row.appendChild(btn);
       });
+
+      const resetBtn = document.getElementById('color-reset-btn');
+      if (resetBtn) {
+        resetBtn.textContent = currentColor ? 'Reset to default' : 'Using default color';
+        resetBtn.onclick = function () {
+          row.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
+          resetBtn.textContent = 'Using default color';
+          saveAvatarColor(null);
+        };
+      }
     }
 
     async function saveAvatarColor(color) {
