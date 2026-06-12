@@ -4119,7 +4119,14 @@ out center tags;`.trim();
       subtitle.textContent = '';
       feed.innerHTML       = '<p class="no-data-msg">Loading…</p>';
       const histAvatar = document.getElementById('history-avatar');
-      if (histAvatar && currentUsername) renderAvatarEl(histAvatar, currentUsername, avatarCache[currentUsername]?.emoji, avatarCache[currentUsername]?.color);
+      if (histAvatar && currentUsername) {
+        renderAvatarEl(histAvatar, currentUsername, avatarCache[currentUsername]?.emoji, avatarCache[currentUsername]?.color);
+        histAvatar.style.cursor = 'pointer';
+        histAvatar.onclick = function () {
+          currentProfileUser = currentUsername;
+          openEmojiPicker();
+        };
+      }
       panel.classList.add('open');
       document.getElementById('panel-backdrop').classList.add('visible');
 
@@ -4435,6 +4442,7 @@ out center tags;`.trim();
             feed.innerHTML = '<p class="no-data-msg">No reports yet — be the first!</p>';
             return;
           }
+          await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
           subtitle.textContent = sorted.length + ' contributors';
           feed.innerHTML = '';
           sorted.forEach(function (entry, i) {
@@ -4445,10 +4453,13 @@ out center tags;`.trim();
             const row = document.createElement('div');
             row.className = 'leaderboard-row' + (isMe ? ' age-fresh' : '');
             row.style.borderColor = isMe ? '#4caf50' : '';
+            row.style.cursor = 'pointer';
             row.innerHTML =
               '<div class="leaderboard-rank ' + rankClass + '">' + medal + '</div>' +
+              avatarHTML(entry[0]) +
               '<div class="leaderboard-name">' + escapeHTML(entry[0]) + (isMe ? ' <span style="color:#4caf50;font-size:11px">(you)</span>' : '') + '</div>' +
               '<div class="leaderboard-count">' + entry[1] + ' report' + (entry[1] === 1 ? '' : 's') + '</div>';
+            row.addEventListener('click', function () { openUserProfile(entry[0]); });
             feed.appendChild(row);
           });
         } catch (e) {
@@ -4485,6 +4496,7 @@ out center tags;`.trim();
             return;
           }
 
+          await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
           const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
           feed.innerHTML = '';
           sorted.forEach(function (entry, i) {
@@ -4499,13 +4511,16 @@ out center tags;`.trim();
             const row   = document.createElement('div');
             row.className = 'leaderboard-row' + (isMe ? ' age-fresh' : '');
             row.style.borderColor = isMe ? '#4caf50' : '';
+            row.style.cursor = 'pointer';
             row.innerHTML =
               '<div class="leaderboard-rank ' + rankClass + '">' + medal + '</div>' +
+              avatarHTML(entry[0]) +
               '<div class="leaderboard-name">' + escapeHTML(entry[0]) + (isMe ? ' <span style="color:#4caf50;font-size:11px">(you)</span>' : '') + '</div>' +
               '<div class="leaderboard-count" style="text-align:right">' +
                 '<div style="font-weight:700;color:var(--accent)">' + price + '</div>' +
                 '<div style="font-size:11px;color:var(--text3)">' + fuel + ' · ' + ago + '</div>' +
               '</div>';
+            row.addEventListener('click', function () { openUserProfile(entry[0]); });
             feed.appendChild(row);
           });
         } catch (e) {
@@ -4714,6 +4729,28 @@ out center tags;`.trim();
       }
     }
 
+    async function fetchAvatarBatch(usernames) {
+      await Promise.all(usernames.map(async function (username) {
+        if (avatarCache[username]) return;
+        try {
+          const doc = await db.collection('usernames').doc(username).get();
+          const d = doc.exists ? doc.data() : {};
+          avatarCache[username] = { emoji: d.avatar_emoji || null, color: d.avatar_color || null };
+        } catch (e) {
+          avatarCache[username] = { emoji: null, color: null };
+        }
+      }));
+    }
+
+    function avatarHTML(username) {
+      const emoji = avatarCache[username]?.emoji || null;
+      const color = avatarCache[username]?.color || null;
+      const auto  = avatarColor(username);
+      const bg    = color || (emoji ? auto + '55' : auto);
+      const body  = emoji ? escapeHTML(emoji) : escapeHTML((username[0] || '?').toUpperCase());
+      return '<div class="avatar-circle" style="width:34px;height:34px;font-size:18px;background:' + bg + '">' + body + '</div>';
+    }
+
     // ── USER PROFILE PANEL ────────────────────────────────────────────
     function closeUserProfile() {
       document.getElementById('user-profile-panel').classList.remove('open');
@@ -4844,7 +4881,7 @@ out center tags;`.trim();
       const color = avatarCache[currentUsername]?.color || null;
       if (emoji) {
         btn.innerHTML = '<span style="font-size:22px;line-height:1;pointer-events:none">' + emoji + '</span>';
-        btn.style.background = color || (avatarColor(currentUsername) + '55');
+        btn.style.background = color || avatarColor(currentUsername);
       } else {
         btn.innerHTML = PROFILE_BTN_SVG;
         btn.style.background = '';
