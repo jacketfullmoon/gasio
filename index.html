@@ -3497,8 +3497,11 @@ out center tags;`.trim();
           const isOwnerByUsername = ru && ru === currentUsername;
           const isOwnerByDevice   = !ru && reply.device_id && reply.device_id === currentDeviceId;
           const isOwner = isOwnerByUsername || isOwnerByDevice;
-          // For device-only match, use current user's avatar data as fallback
+          const canDelete = isOwner || isAdmin;
           const displayUser = ru || (isOwnerByDevice ? currentUsername : null);
+          const delBtn = canDelete
+            ? '<button class="reply-user-delete" data-reply-id="' + escapeHTML(reply.id) + '" data-report-id="' + escapeHTML(report.id) + '" title="Delete reply">🗑</button>'
+            : '';
           let replyAuthor = '';
           if (displayUser) {
             const ruEmoji = avatarCache[displayUser]?.emoji || null;
@@ -3510,13 +3513,17 @@ out center tags;`.trim();
               '<div class="avatar-circle reply-author-avatar" style="width:22px;height:22px;font-size:11px;background:' + ruBg + '" data-username="' + escapeHTML(displayUser) + '">' + ruBody + '</div>' +
               '<span class="username-link reply-author-name" data-username="' + escapeHTML(displayUser) + '">' + escapeHTML(displayUser) + '</span>' +
               '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
-              (isOwner ? '<button class="reply-user-delete" data-reply-id="' + escapeHTML(reply.id) + '" data-report-id="' + escapeHTML(report.id) + '" title="Delete reply">🗑</button>' : '') +
+              delBtn +
+              '</div>';
+          } else {
+            replyAuthor = '<div class="reply-author-row">' +
+              '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
+              delBtn +
               '</div>';
           }
           inner += '<div class="reply-item" data-reply-id="' + escapeHTML(reply.id) + '">' +
             replyAuthor +
             '<p class="reply-text">' + escapeHTML(reply.body) + '</p>' +
-            (!displayUser ? '<p class="reply-time">' + timeAgo(rDate) + '</p>' : '') +
             '</div>';
         });
         inner += '</div>';
