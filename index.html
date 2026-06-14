@@ -2181,7 +2181,7 @@
       <div style="display:flex;align-items:center;gap:12px">
         <div id="history-avatar" class="avatar-circle" style="width:40px;height:40px;font-size:20px;flex-shrink:0"></div>
         <div>
-          <h2 id="history-title">My Reports</h2>
+          <h2 id="history-title">My Fills</h2>
           <div class="history-subtitle" id="history-subtitle"></div>
         </div>
       </div>
@@ -2234,6 +2234,7 @@
     <div id="leaderboard-tabs">
       <button class="lb-tab active" data-tab="contributors">Top Contributors</button>
       <button class="lb-tab" data-tab="hunters">Price Hunters</button>
+      <button class="lb-tab" data-tab="best-prices">Best Prices</button>
     </div>
     <div id="leaderboard-feed"></div>
   </div>
@@ -2242,7 +2243,7 @@
   <div id="admin-user-panel" role="dialog" aria-modal="true">
     <div id="admin-user-header">
       <div>
-        <h2 id="admin-user-title">User Reports</h2>
+        <h2 id="admin-user-title">User Fills</h2>
         <div class="admin-user-subtitle" id="admin-user-subtitle"></div>
       </div>
       <button id="admin-user-close" aria-label="Close">×</button>
@@ -2343,7 +2344,7 @@
   </div>
 
   <!-- Profile / history button -->
-  <button id="profile-btn" aria-label="My reports">
+  <button id="profile-btn" aria-label="My fills">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -2462,22 +2463,22 @@
         <div class="price-card" id="card-regular">
           <div class="fuel-label">Regular</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No reports</div>
+          <div class="fuel-age">No fills</div>
         </div>
         <div class="price-card" id="card-mid">
           <div class="fuel-label">Mid-Grade</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No reports</div>
+          <div class="fuel-age">No fills</div>
         </div>
         <div class="price-card" id="card-premium">
           <div class="fuel-label">Premium</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No reports</div>
+          <div class="fuel-age">No fills</div>
         </div>
         <div class="price-card" id="card-diesel">
           <div class="fuel-label">Diesel</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No reports</div>
+          <div class="fuel-age">No fills</div>
         </div>
       </div>
 
@@ -2489,7 +2490,7 @@
       </div>
 
       <!-- Reports feed -->
-      <p class="section-title">Reports</p>
+      <p class="section-title">Fills</p>
       <div id="reports-list"></div>
 
       <!-- My posts at this station -->
@@ -2499,7 +2500,7 @@
       </div>
 
       <!-- Unified post form -->
-      <p class="section-title">Post a Report</p>
+      <p class="section-title">Post a Fill</p>
       <form id="post-form" novalidate>
         <!-- Honeypot -->
         <input class="hp-field" name="website" type="text" tabindex="-1" autocomplete="off" />
@@ -2522,7 +2523,7 @@
                   maxlength="280" rows="3"></textarea>
         <p id="post-char-count">280</p>
 
-        <button type="submit" class="btn-primary" id="post-submit">Post Report</button>
+        <button type="submit" class="btn-primary" id="post-submit">Post Fill</button>
       </form>
 
     </div><!-- end #sheet-body -->
@@ -3216,7 +3217,7 @@ out center tags;`.trim();
               ['to-string', ['floor', ['/', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 100], 10]]],
               ['to-string', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 10]]
             ],
-            ''
+            '?'
           ]
         },
         paint: { 'text-color': '#ffffff' }
@@ -3340,7 +3341,7 @@ out center tags;`.trim();
       const card = document.getElementById('card-' + fuelType);
       card.classList.remove('has-data', 'stale');
       card.querySelector('.fuel-price').textContent = '—';
-      card.querySelector('.fuel-age').textContent   = 'No reports';
+      card.querySelector('.fuel-age').textContent   = 'No fills';
     }
 
     // ── DRAG TO DISMISS ───────────────────────────────────────────────
@@ -3455,7 +3456,7 @@ out center tags;`.trim();
         });
 
         if (snap.empty) {
-          list.innerHTML = '<p class="no-data-msg">No reports yet. Be the first!</p>';
+          list.innerHTML = '<p class="no-data-msg">No fills yet. Be the first!</p>';
           return;
         }
 
@@ -3496,7 +3497,7 @@ out center tags;`.trim();
 
       } catch (e) {
         console.error('Firestore error:', e);
-        list.innerHTML = '<p class="no-data-msg">Could not load reports.</p>';
+        list.innerHTML = '<p class="no-data-msg">Could not load fills.</p>';
       }
     }
 
@@ -3506,7 +3507,7 @@ out center tags;`.trim();
       if (!report) {
         card.classList.remove('age-fresh', 'age-medium', 'age-old', 'stale', 'has-data');
         card.querySelector('.fuel-price').textContent = '—';
-        card.querySelector('.fuel-age').textContent   = 'No reports';
+        card.querySelector('.fuel-age').textContent   = 'No fills';
         return;
       }
       const dollars = (report.price_cents / 100).toFixed(2);
@@ -3913,7 +3914,7 @@ out center tags;`.trim();
             if (prevCents && newCents > prevCents) showSad();
             else showNice();
           } else {
-            showToast('Report posted — thanks!');
+            showToast('Fill posted — thanks!');
           }
 
           // Reset form
@@ -3929,7 +3930,7 @@ out center tags;`.trim();
           showToast('Failed to post. Try again.');
         } finally {
           btn.disabled = false;
-          btn.textContent = 'Post Report';
+          btn.textContent = 'Post Fill';
         }
       });
     }
@@ -4066,7 +4067,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
           return;
         }
 
@@ -4079,7 +4080,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        countEl.textContent = docs.length + ' reports';
+        countEl.textContent = docs.length + ' fills';
         feed.innerHTML = '';
 
         docs.forEach(function (doc) {
@@ -4126,7 +4127,7 @@ out center tags;`.trim();
               await doc.ref.delete();
               row.remove();
               const remaining = feed.querySelectorAll('.admin-row').length;
-              countEl.textContent = remaining + ' reports';
+              countEl.textContent = remaining + ' fills';
               showToast('Report deleted');
             } catch (err) {
               showToast('Delete failed: ' + err.message);
@@ -4575,7 +4576,7 @@ out center tags;`.trim();
       const title    = document.getElementById('history-title');
       const subtitle = document.getElementById('history-subtitle');
 
-      title.textContent    = currentUsername ? currentUsername + "'s Reports" : 'My Reports';
+      title.textContent    = currentUsername ? currentUsername + "'s Fills" : 'My Fills';
       subtitle.textContent = '';
       feed.innerHTML       = '<p class="no-data-msg">Loading…</p>';
       const histAvatar = document.getElementById('history-avatar');
@@ -4591,7 +4592,7 @@ out center tags;`.trim();
       document.getElementById('panel-backdrop').classList.add('visible');
 
       if (!db || !currentDeviceId) {
-        feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
+        feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
         return;
       }
 
@@ -4610,7 +4611,7 @@ out center tags;`.trim();
         });
 
         if (docs.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No reports yet — tap a station and post one!</p>';
+          feed.innerHTML = '<p class="no-data-msg">No fills yet — tap a station and post one!</p>';
           return;
         }
 
@@ -4620,7 +4621,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -4716,7 +4717,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No reports from this user.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No fills from this user.</p>';
           return;
         }
 
@@ -4728,7 +4729,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -4900,7 +4901,7 @@ out center tags;`.trim();
           });
           const sorted = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20);
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No reports yet — be the first!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No fills yet — be the first!</p>';
             return;
           }
           await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
@@ -4925,6 +4926,96 @@ out center tags;`.trim();
           });
         } catch (e) {
           feed.innerHTML = '<p class="no-data-msg">Could not load leaderboard.</p>';
+        }
+
+      } else if (tab === 'best-prices') {
+        // ── BEST PRICES ───────────────────────────────────────────────
+        title.textContent = 'Best Prices';
+        subtitle.textContent = 'Cheapest gas in LA right now';
+        try {
+          const snap = await db.collectionGroup('reports').limit(500).get();
+          const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
+
+          // Most recent price per station (any fuel type)
+          const best = {}; // { stationId: { price_cents, fuel_type, created_at } }
+          snap.forEach(function (doc) {
+            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
+            const d = doc.data();
+            if (!d.price_cents || !d.fuel_type) return;
+            const stationId = doc.ref.parent.parent.id;
+            const ts = d.created_at ? d.created_at.toDate() : null;
+            if (!best[stationId] || d.price_cents < best[stationId].price_cents) {
+              best[stationId] = { price_cents: d.price_cents, fuel_type: d.fuel_type, created_at: ts, stationId: stationId };
+            }
+          });
+
+          const sorted = Object.values(best)
+            .sort(function (a, b) { return a.price_cents - b.price_cents; })
+            .slice(0, 5);
+
+          if (sorted.length === 0) {
+            feed.innerHTML = '<p class="no-data-msg">No prices reported yet — be the first!</p>';
+            return;
+          }
+
+          subtitle.textContent = sorted.length + ' cheapest stations';
+          feed.innerHTML = '';
+          sorted.forEach(function (info, i) {
+            const rank = i + 1;
+            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
+            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+            const price = '$' + (info.price_cents / 100).toFixed(2);
+            const fuel = fuelLabel[info.fuel_type] || info.fuel_type;
+            const ago = info.created_at ? timeAgo(info.created_at) : 'unknown';
+
+            // Look up station name + brand from GeoJSON
+            let stationName = info.stationId;
+            let stationBrand = '';
+            let coords = null;
+            if (stationsGeoJSON) {
+              const feat = stationsGeoJSON.features.find(function (f) {
+                return String(f.properties.id) === String(info.stationId);
+              });
+              if (feat) {
+                stationName = feat.properties.name || feat.properties.brand || info.stationId;
+                stationBrand = feat.properties.brand || '';
+                coords = feat.geometry.coordinates;
+              }
+            }
+
+            const row = document.createElement('div');
+            row.className = 'leaderboard-row';
+            row.style.cursor = 'pointer';
+            row.innerHTML =
+              '<div class="leaderboard-rank ' + rankClass + '" style="font-size:18px">' + medal + '</div>' +
+              '<div class="leaderboard-name" style="flex:1;min-width:0">' +
+                '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHTML(stationName) + '</div>' +
+                '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + (stationBrand ? escapeHTML(stationBrand) + ' · ' : '') + ago + '</div>' +
+              '</div>' +
+              '<div style="text-align:right;flex-shrink:0">' +
+                '<div style="font-weight:800;font-size:18px;color:#2e7d32">' + price + '</div>' +
+                '<div style="font-size:11px;color:var(--text3)">' + fuel + '</div>' +
+              '</div>';
+            row.addEventListener('click', function () {
+              document.getElementById('leaderboard-panel').classList.remove('open');
+              document.getElementById('panel-backdrop').classList.remove('visible');
+              if (coords) {
+                map.flyTo({ center: coords, zoom: 16, duration: 800 });
+              }
+              // Open bottom sheet for this station
+              if (stationsGeoJSON) {
+                const feat = stationsGeoJSON.features.find(function (f) {
+                  return String(f.properties.id) === String(info.stationId);
+                });
+                if (feat) {
+                  setTimeout(function () { openSheet(feat.properties); }, coords ? 900 : 0);
+                }
+              }
+            });
+            feed.appendChild(row);
+          });
+        } catch (e) {
+          feed.innerHTML = '<p class="no-data-msg">Could not load best prices.</p>';
         }
 
       } else {
@@ -4954,7 +5045,7 @@ out center tags;`.trim();
             .slice(0, 20);
 
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No price reports in the last 30 days yet!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No price fills in the last 30 days yet!</p>';
             return;
           }
 
@@ -5335,11 +5426,11 @@ out center tags;`.trim();
         }
 
         const priceCount = reports.filter(function (r) { return r.price_cents; }).length;
-        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' price' + (priceCount !== 1 ? 's' : '') + ' logged';
+        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' fill' + (priceCount !== 1 ? 's' : '') + ' logged';
 
         feed.innerHTML = '';
         if (reports.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
           return;
         }
 
@@ -5393,7 +5484,10 @@ out center tags;`.trim();
       '🌻','🌹','🍄','🌾','🎋','🪴','🌳','🍃',
       // sky, space & weather
       '⭐','🌟','💫','✨','🌙','🌛','🌕','☀️',
-      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍'
+      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍',
+      // fruits
+      '🍎','🍊','🍋','🍇','🍓','🍒','🍍','🥝',
+      '🍌','🍉','🫐','🥭','🍈','🍐','🍏','🥥'
     ];
 
     var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
