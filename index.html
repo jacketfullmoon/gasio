@@ -1185,6 +1185,35 @@
       font-size: 11px;
       color: var(--text3);
     }
+    #my-posts-list {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .my-post-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .my-post-row:last-child { border-bottom: none; }
+    .my-post-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .my-post-comment {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 1px;
+    }
+    .my-post-date {
+      font-size: 11px;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
 
     /* Bottom-left map buttons */
     #profile-btn, #leaderboard-btn, #cheapest-btn {
@@ -2001,6 +2030,7 @@
     }
     .thanks-btn:active { background: var(--surface2); }
     .thanks-btn.thanked { color: #2e7d32; }
+    .thanks-btn:disabled { opacity: 0.65; cursor: default; }
 
     /* Brand filter — mirrors price filter styling */
     #brand-filter-section { border-top: 1px solid var(--border); }
@@ -3570,13 +3600,15 @@ out center tags;`.trim();
 
       // Actions row
       const confirmCount = report.confirm_count || 0;
-      const alreadyConfirmed = !!(currentDeviceId &&
-        (report.confirmed_by || []).includes(currentDeviceId));
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayKey = currentDeviceId ? currentDeviceId + '_' + todayStr : null;
+      const alreadyConfirmed = !!(todayKey &&
+        (report.confirmed_by || []).includes(todayKey));
       const alreadyFlagged = currentDeviceId &&
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<button class="thanks-btn' + (alreadyConfirmed ? ' thanked' : '') + '" data-report-id="' + report.id + '">👍' + (confirmCount ? ' ' + confirmCount : '') + ' Still accurate</button>' +
+        '<button class="thanks-btn' + (alreadyConfirmed ? ' thanked' : '') + '" data-report-id="' + report.id + '"' + (alreadyConfirmed ? ' disabled' : '') + '>' + (alreadyConfirmed ? '✓' : '👍') + (confirmCount ? ' ' + confirmCount : '') + (alreadyConfirmed ? ' Confirmed today' : ' Still accurate') + '</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
@@ -3664,54 +3696,49 @@ out center tags;`.trim();
       // Wire merged 👍 Still accurate button (toggleable)
       card.querySelector('.thanks-btn').addEventListener('click', async function () {
         if (!db || !currentDeviceId) { showToast('Sign in first'); return; }
-        const isNowThanked = !this.classList.contains('thanked');
-        this.classList.toggle('thanked', isNowThanked);
+        if (this.disabled) return;
+
+        const btn = this;
+        const todayKey = currentDeviceId + '_' + new Date().toISOString().slice(0, 10);
         const ref = db.collection('station_reports').doc(stationId).collection('reports').doc(report.id);
-        const currentCount = parseInt(this.textContent.match(/\d+/)?.[0] || '0');
-        const newCount = isNowThanked ? currentCount + 1 : Math.max(0, currentCount - 1);
-        this.textContent = '👍' + (newCount ? ' ' + newCount : '') + ' Still accurate';
+        const currentCount = parseInt(btn.textContent.match(/\d+/)?.[0] || '0');
+        const newCount = currentCount + 1;
+
+        // Optimistic UI update
+        btn.classList.add('thanked');
+        btn.disabled = true;
+        btn.textContent = '✓' + ' ' + newCount + ' Confirmed today';
 
         // Update the price card for this fuel type
         if (report.fuel_type) {
           const priceCard = document.getElementById('card-' + report.fuel_type);
           if (priceCard && priceCard.classList.contains('has-data')) {
             const ageEl = priceCard.querySelector('.fuel-age');
-            if (isNowThanked) {
-              priceCard.classList.add('verified');
-              if (ageEl && !ageEl.dataset.origText) ageEl.dataset.origText = ageEl.textContent;
-              if (ageEl) ageEl.textContent = '✓ Verified today';
-            } else {
-              priceCard.classList.remove('verified');
-              if (ageEl && ageEl.dataset.origText) {
-                ageEl.textContent = ageEl.dataset.origText;
-                delete ageEl.dataset.origText;
-              }
-            }
+            priceCard.classList.add('verified');
+            if (ageEl && !ageEl.dataset.origText) ageEl.dataset.origText = ageEl.textContent;
+            if (ageEl) ageEl.textContent = '✓ Verified today';
           }
         }
 
         try {
           await ref.update({
-            confirm_count: firebase.firestore.FieldValue.increment(isNowThanked ? 1 : -1),
-            confirmed_by:  isNowThanked
-              ? firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
-              : firebase.firestore.FieldValue.arrayRemove(currentDeviceId)
+            confirm_count: firebase.firestore.FieldValue.increment(1),
+            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(todayKey)
           });
         } catch (e) {
           // Revert on failure
-          this.classList.toggle('thanked', !isNowThanked);
-          this.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
+          btn.classList.remove('thanked');
+          btn.disabled = false;
+          btn.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
           if (report.fuel_type) {
             const priceCard = document.getElementById('card-' + report.fuel_type);
             if (priceCard) {
-              priceCard.classList.toggle('verified', !isNowThanked);
+              priceCard.classList.remove('verified');
               const ageEl = priceCard.querySelector('.fuel-age');
-              if (ageEl && ageEl.dataset.origText) {
-                ageEl.textContent = ageEl.dataset.origText;
-                delete ageEl.dataset.origText;
-              }
+              if (ageEl && ageEl.dataset.origText) { ageEl.textContent = ageEl.dataset.origText; delete ageEl.dataset.origText; }
             }
           }
+          showToast('Could not save — try again');
         }
       });
 
@@ -4551,16 +4578,19 @@ out center tags;`.trim();
         list.innerHTML = '';
         docs.forEach(function (doc) {
           const d = doc.data();
-          const parts = [];
-          if (d.fuel_type && d.price_cents) parts.push((fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2));
-          if (d.comment) parts.push('"' + escapeHTML(d.comment) + '"');
           const date = d.created_at ? d.created_at.toDate() : new Date();
+          const priceLabel = (d.fuel_type && d.price_cents)
+            ? (fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2)
+            : '';
           const item = document.createElement('div');
-          item.className = 'history-row';
-          item.style.cursor = 'default';
+          item.className = 'my-post-row';
           item.innerHTML =
-            '<div class="history-row-body">' + (parts.join(' · ') || '(empty)') + '</div>' +
-            '<div class="history-row-meta">' + date.toLocaleString() + '</div>';
+            '<div>' +
+              (priceLabel ? '<div class="my-post-label">' + escapeHTML(priceLabel) + '</div>' : '') +
+              (d.comment ? '<div class="my-post-comment">"' + escapeHTML(d.comment) + '"</div>' : '') +
+              (!priceLabel && !d.comment ? '<div class="my-post-label" style="color:var(--text3)">(no content)</div>' : '') +
+            '</div>' +
+            '<div class="my-post-date">' + timeAgo(date) + '</div>';
           list.appendChild(item);
         });
         section.style.display = 'block';
