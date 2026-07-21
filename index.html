@@ -118,32 +118,80 @@
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: rgba(255,255,255,0.92);
+      background: var(--bg);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      transition: opacity 0.4s ease;
+      gap: 18px;
+      transition: opacity 0.5s ease;
     }
     #loading-overlay.hidden {
       opacity: 0;
       pointer-events: none;
-      display: none;
     }
-    .spinner {
-      width: 44px;
-      height: 44px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    #loading-donut-wrap {
+      position: relative;
+      width: 150px;
+      height: 150px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loading-overlay p {
-      font-size: 15px;
-      color: var(--text2);
+    #loading-donut-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      transform: rotate(-90deg);
+    }
+    #donut-track {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 7;
+    }
+    #donut-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-dasharray: 289;
+      stroke-dashoffset: 289;
+      transition: stroke-dashoffset 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #loading-donut-emojis {
+      position: absolute;
+      inset: 0;
+      animation: donut-spin 9s linear infinite;
+    }
+    .donut-emoji {
+      position: absolute;
+      font-size: 20px;
+      top: calc(50% - 12px);
+      left: calc(50% - 12px);
+      line-height: 1;
+    }
+    .donut-emoji:nth-child(1) { transform: rotate(0deg)   translateX(63px) rotate(0deg); }
+    .donut-emoji:nth-child(2) { transform: rotate(60deg)  translateX(63px) rotate(-60deg); }
+    .donut-emoji:nth-child(3) { transform: rotate(120deg) translateX(63px) rotate(-120deg); }
+    .donut-emoji:nth-child(4) { transform: rotate(180deg) translateX(63px) rotate(-180deg); }
+    .donut-emoji:nth-child(5) { transform: rotate(240deg) translateX(63px) rotate(-240deg); }
+    .donut-emoji:nth-child(6) { transform: rotate(300deg) translateX(63px) rotate(-300deg); }
+    @keyframes donut-spin { to { transform: rotate(360deg); } }
+    #loading-center-emoji {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 34px;
+      line-height: 1;
+      animation: center-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes center-pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50%       { transform: translate(-50%, -50%) scale(1.12); }
+    }
+    #loading-text {
+      font-size: 13px;
+      color: var(--text3);
       font-weight: 500;
+      letter-spacing: 0.2px;
+      transition: opacity 0.2s;
     }
 
     /* ── TOAST ───────────────────────────────────────────────────── */
@@ -891,14 +939,15 @@
         --border: #333333;
       }
       html, body { background: #111111; }
-      #loading-overlay { background: rgba(18,18,18,0.94); }
+      #loading-overlay { background: #1a1a1a; }
       .maplibregl-ctrl-group { filter: invert(1) hue-rotate(180deg); }
     }
 
     /* ── REDUCED MOTION ──────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       #bottom-sheet, #sheet-backdrop, #toast, #loading-overlay { transition: none; }
-      .spinner { animation: none; border-top-color: var(--accent); }
+      #loading-donut-emojis, #loading-center-emoji { animation: none; }
+      #donut-fill { transition: none; }
     }
 
     /* ── AUTH MODAL ──────────────────────────────────────────────── */
@@ -2073,6 +2122,60 @@
       font-size: 14px; font-weight: 600; cursor: pointer;
     }
 
+    /* Trip cost calculator */
+    #trip-cost-section { border-top: 1px solid var(--border); }
+    #trip-cost-toggle-row {
+      display: flex; align-items: center; padding: 10px 14px;
+    }
+    #trip-cost-toggle-btn {
+      background: none; border: none; font-family: var(--font);
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      cursor: pointer; padding: 0; text-align: left;
+    }
+    #trip-cost-controls {
+      display: none; flex-direction: column; gap: 10px;
+      padding: 0 14px 14px;
+    }
+    #trip-cost-controls.open { display: flex; }
+    .trip-label {
+      font-size: 11px; font-weight: 700; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: block; margin-bottom: 4px;
+    }
+    .trip-field { display: flex; flex-direction: column; }
+    .trip-loc-row { display: flex; gap: 6px; align-items: stretch; }
+    .trip-loc-row input { flex: 1; }
+    #trip-from-gps {
+      background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 0 9px; cursor: pointer; font-size: 15px;
+      color: var(--text); flex-shrink: 0;
+    }
+    .trip-inline-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #trip-cost-controls input[type="text"],
+    #trip-cost-controls input[type="number"] {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; font-size: 14px;
+      font-family: var(--font); color: var(--text); box-sizing: border-box;
+    }
+    #trip-calc-btn {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 10px; padding: 10px; font-family: var(--font);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    #trip-calc-btn:active { opacity: 0.85; }
+    #trip-calc-btn:disabled { opacity: 0.6; cursor: default; }
+    #trip-result {
+      background: var(--surface2); border-radius: 10px; padding: 12px 14px;
+      display: none; text-align: center;
+    }
+    #trip-result.visible { display: block; }
+    .trip-result-cost {
+      font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 6px;
+    }
+    .trip-result-detail {
+      font-size: 12px; color: var(--text3); line-height: 1.8;
+    }
+
     /* Price alert */
     #price-alert-section { border-top: 1px solid var(--border); padding: 14px 16px; display: none; }
     #price-alert-section.visible { display: block; }
@@ -2295,8 +2398,22 @@
 
   <!-- Loading overlay -->
   <div id="loading-overlay">
-    <div class="spinner"></div>
-    <p id="loading-text">Finding gas stations…</p>
+    <div id="loading-donut-wrap">
+      <svg id="loading-donut-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle id="donut-track" cx="60" cy="60" r="46"/>
+        <circle id="donut-fill"  cx="60" cy="60" r="46"/>
+      </svg>
+      <div id="loading-donut-emojis">
+        <span class="donut-emoji">⛽</span>
+        <span class="donut-emoji">💰</span>
+        <span class="donut-emoji">⛽</span>
+        <span class="donut-emoji">💵</span>
+        <span class="donut-emoji">⛽</span>
+        <span class="donut-emoji">💲</span>
+      </div>
+      <div id="loading-center-emoji">🤑</div>
+    </div>
+    <p id="loading-text">Starting up…</p>
   </div>
 
   <!-- Toast notification -->
@@ -2456,6 +2573,36 @@
             <span>$</span><input id="brand-max-price" type="number" placeholder="6.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
           </div>
           <button id="brand-apply">Show on map</button>
+        </div>
+      </div>
+      <div id="trip-cost-section">
+        <div id="trip-cost-toggle-row">
+          <button id="trip-cost-toggle-btn">🚗 How much $ will this trip cost?</button>
+        </div>
+        <div id="trip-cost-controls">
+          <div class="trip-field">
+            <label class="trip-label">From</label>
+            <div class="trip-loc-row">
+              <input id="trip-from" type="text" placeholder="Departure address…" autocomplete="off" />
+              <button id="trip-from-gps" title="Use my location">📍</button>
+            </div>
+          </div>
+          <div class="trip-field">
+            <label class="trip-label">To</label>
+            <input id="trip-to" type="text" placeholder="Destination address…" autocomplete="off" />
+          </div>
+          <div class="trip-inline-row">
+            <div class="trip-field">
+              <label class="trip-label">MPG</label>
+              <input id="trip-mpg" type="number" placeholder="28" min="1" max="300" inputmode="decimal" />
+            </div>
+            <div class="trip-field">
+              <label class="trip-label">$/gal</label>
+              <input id="trip-price" type="number" placeholder="4.50" step="0.01" min="0.01" inputmode="decimal" />
+            </div>
+          </div>
+          <button id="trip-calc-btn">Tell me! ⛽</button>
+          <div id="trip-result"></div>
         </div>
       </div>
     </div>
@@ -2921,7 +3068,7 @@ out center tags;`.trim();
         geolocate.trigger();
       });
 
-      map.on('load', onMapLoad);
+      map.on('load', function () { setLoadingProgress(45, 'Map ready…'); onMapLoad(); });
       map.on('error', function (e) {
         console.error('Map error:', e);
         // Tile errors are non-fatal; only hide loading if map itself failed to init
@@ -2971,10 +3118,11 @@ out center tags;`.trim();
       // Request GPS
       requestGPS();
 
-      setLoadingText('Finding gas stations…');
+      setLoadingProgress(60, 'Finding gas stations…');
       try {
         const geojson = await loadStations();
         stationsGeoJSON = geojson;
+        setLoadingProgress(90, 'Placing pins…');
         addStationsToMap(geojson);
         document.dispatchEvent(new Event('stationsLoaded'));
       } catch (e) {
@@ -3026,7 +3174,7 @@ out center tags;`.trim();
 
       // Fetch from Overpass
       try {
-        setLoadingText('Loading gas stations…');
+        setLoadingProgress(70, 'Fetching station data…');
         const geojson = await fetchFromOverpass();
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data: geojson, timestamp: Date.now() }));
@@ -3038,7 +3186,7 @@ out center tags;`.trim();
       }
 
       // Fallback to static file
-      setLoadingText('Loading stations…');
+      setLoadingProgress(70, 'Loading stations…');
       const res = await fetch('./stations.geojson');
       if (!res.ok) throw new Error('Static fallback not found');
       const geojson = await res.json();
@@ -4054,12 +4202,18 @@ out center tags;`.trim();
       setTimeout(function () { el.classList.remove('show'); }, duration || 2800);
     }
 
-    function setLoadingText(msg) {
-      document.getElementById('loading-text').textContent = msg;
+    function setLoadingProgress(pct, msg) {
+      const fill = document.getElementById('donut-fill');
+      const text = document.getElementById('loading-text');
+      if (fill) fill.style.strokeDashoffset = 289 * (1 - pct / 100);
+      if (msg && text) text.textContent = msg;
     }
 
     function hideLoading() {
-      document.getElementById('loading-overlay').classList.add('hidden');
+      setLoadingProgress(100, 'Ready!');
+      setTimeout(function () {
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }, 350);
     }
 
     // ── ADMIN ─────────────────────────────────────────────────────────
@@ -5875,13 +6029,116 @@ out center tags;`.trim();
       }
     }
 
+    function setupTripCost() {
+      const toggleBtn  = document.getElementById('trip-cost-toggle-btn');
+      const controls   = document.getElementById('trip-cost-controls');
+      const fromInput  = document.getElementById('trip-from');
+      const toInput    = document.getElementById('trip-to');
+      const mpgInput   = document.getElementById('trip-mpg');
+      const priceInput = document.getElementById('trip-price');
+      const calcBtn    = document.getElementById('trip-calc-btn');
+      const resultEl   = document.getElementById('trip-result');
+      const gpsBtn     = document.getElementById('trip-from-gps');
+
+      toggleBtn.addEventListener('click', function () {
+        const open = controls.classList.toggle('open');
+        resultEl.classList.remove('visible');
+        if (open) fromInput.focus();
+      });
+
+      gpsBtn.addEventListener('click', function () {
+        if (!navigator.geolocation) { showToast('GPS not available'); return; }
+        gpsBtn.textContent = '…';
+        navigator.geolocation.getCurrentPosition(
+          async function (pos) {
+            try {
+              const { latitude: lat, longitude: lon } = pos.coords;
+              const res = await fetch(
+                'https://nominatim.openstreetmap.org/reverse?' +
+                new URLSearchParams({ lat, lon, format: 'json' }),
+                { headers: { 'Referer': location.origin } }
+              );
+              const d = await res.json();
+              fromInput.value = d.display_name || (lat.toFixed(5) + ', ' + lon.toFixed(5));
+            } catch (e) {
+              fromInput.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
+            }
+            gpsBtn.textContent = '📍';
+          },
+          function () { gpsBtn.textContent = '📍'; showToast('Could not get location'); }
+        );
+      });
+
+      async function geocode(q) {
+        const res = await fetch(
+          'https://nominatim.openstreetmap.org/search?' +
+          new URLSearchParams({ q, format: 'json', limit: '1' }),
+          { headers: { 'Referer': location.origin } }
+        );
+        const data = await res.json();
+        if (!data.length) throw new Error('Address not found — try being more specific');
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      }
+
+      calcBtn.addEventListener('click', async function () {
+        const from  = fromInput.value.trim();
+        const to    = toInput.value.trim();
+        const mpg   = parseFloat(mpgInput.value);
+        const price = parseFloat(priceInput.value);
+
+        if (!from)            { showToast('Enter a departure address'); return; }
+        if (!to)              { showToast('Enter a destination'); return; }
+        if (!mpg || mpg <= 0) { showToast('Enter your car\'s MPG'); return; }
+        if (!price || price <= 0) { showToast('Enter a gas price per gallon'); return; }
+
+        calcBtn.textContent = 'Calculating…';
+        calcBtn.disabled = true;
+        resultEl.classList.remove('visible');
+
+        try {
+          const [a, b] = await Promise.all([geocode(from), geocode(to)]);
+          const osrmRes = await fetch(
+            'https://router.project-osrm.org/route/v1/driving/' +
+            a.lon + ',' + a.lat + ';' + b.lon + ',' + b.lat + '?overview=false'
+          );
+          const osrmData = await osrmRes.json();
+          if (!osrmData.routes || !osrmData.routes.length) throw new Error('No driving route found between those locations');
+
+          const distMiles  = osrmData.routes[0].distance * 0.000621371;
+          const durationS  = osrmData.routes[0].duration;
+          const gallons    = distMiles / mpg;
+          const totalCost  = gallons * price;
+          const hrs  = Math.floor(durationS / 3600);
+          const mins = Math.round((durationS % 3600) / 60);
+          const timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + ' min';
+
+          resultEl.innerHTML =
+            '<div class="trip-result-cost">$' + totalCost.toFixed(2) + '</div>' +
+            '<div class="trip-result-detail">' +
+              distMiles.toFixed(1) + ' mi &nbsp;·&nbsp; ' +
+              gallons.toFixed(2) + ' gal &nbsp;·&nbsp; ' +
+              timeStr + ' drive' +
+            '</div>';
+          resultEl.classList.add('visible');
+        } catch (e) {
+          showToast(e.message || 'Could not calculate route');
+        } finally {
+          calcBtn.textContent = 'Tell me! ⛽';
+          calcBtn.disabled = false;
+        }
+      });
+    }
+
     function boot() {
+      setLoadingProgress(10, 'Starting up…');
       initFirebase();
+      setLoadingProgress(25, 'Loading map…');
       initMap();
       setupAuthModal();
       setupDragToDismiss();
       setupForms();
       setupSearch();
+      setupTripCost();
       setupPriceFilter();
       setupHistoryPanel();
       setupAdminUserPanel();
