@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#d32f2f" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon5.png" />
+  <title>let's get gas~</title>
+  <meta name="description" content="Find gas prices across LA" />
+  <meta property="og:title" content="let's get gas~" />
+  <meta property="og:description" content="Find gas prices across LA" />
+  <meta property="og:type" content="website" />
+
+  <!-- MapLibre GL JS -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <!--
+  ═══════════════════════════════════════════════════════════════════
+  FIREBASE SETUP — REQUIRED BEFORE DEPLOYING
+  ═══════════════════════════════════════════════════════════════════
+  1. Go to https://console.firebase.google.com/
+  2. Create a new project (free Spark plan)
+  3. Add a Web App to the project
+  4. Copy the firebaseConfig values into the CONFIG section below
+  5. In Firestore Database > Rules, paste:
+       rules_version = '2';
+       service cloud.firestore {
+         match /databases/{database}/documents {
+           match /{document=**} {
+             allow read, write: if true;
+           }
+         }
+       }
+  6. Enable Firestore Database (Native mode, any region)
+  ═══════════════════════════════════════════════════════════════════
+  -->
+
+  <!-- Firebase SDK (compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* ── RESET & TOKENS ─────────────────────────────────────────── */
+    :root {
+      --accent: #d32f2f;
+      --accent-light: #ffebee;
+      --bg: #ffffff;
+      --surface: #f5f5f5;
+      --surface2: #eeeeee;
+      --text: #111111;
+      --text2: #666666;
+      --text3: #aaaaaa;
+      --border: #e0e0e0;
+      --sheet-radius: 22px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #e8e8e8;
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── MAP ─────────────────────────────────────────────────────── */
+    #map {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Override MapLibre control positions for safe areas */
+    .maplibregl-ctrl-top-right {
+      top: calc(var(--safe-top) + 60px) !important;
+      right: calc(var(--safe-right) + 10px) !important;
+    }
+    .maplibregl-ctrl-bottom-right {
+      bottom: calc(var(--safe-bottom) + 16px) !important;
+      right: calc(var(--safe-right) + 10px) !important;
+    }
+    .maplibregl-ctrl-bottom-left {
+      bottom: calc(var(--safe-bottom) + 16px) !important;
+      left: calc(var(--safe-left) + 10px) !important;
+    }
+
+    .maplibregl-ctrl-group {
+      border-radius: 12px !important;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    }
+
+    /* ── LOADING OVERLAY ─────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.4s ease;
+    }
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-overlay p {
+      font-size: 15px;
+      color: var(--text2);
+      font-weight: 500;
+    }
+
+    /* ── TOAST ───────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 100px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 90;
+      background: rgba(30,30,30,0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── BOTTOM SHEET ────────────────────────────────────────────── */
+    #sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #sheet-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #bottom-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+      box-shadow: 0 -6px 40px rgba(0,0,0,0.18);
+      transform: translateY(100%);
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      will-change: transform;
+      padding-bottom: calc(var(--safe-bottom) + 8px);
+    }
+    #bottom-sheet.open {
+      transform: translateY(0);
+    }
+
+    /* Drag handle */
+    #sheet-handle {
+      width: 38px;
+      height: 4px;
+      border-radius: 3px;
+      background: var(--border);
+      margin: 14px auto 0;
+      flex-shrink: 0;
+      cursor: grab;
+    }
+
+    /* Sheet header */
+    #sheet-header {
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: relative;
+    }
+    #station-brand {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+    #station-name {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      padding-right: 36px;
+    }
+    #station-address {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 3px;
+    }
+    #sheet-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #sheet-close:active { background: var(--border); }
+
+    /* Sheet scrollable body */
+    #sheet-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      flex: 1;
+      padding: 0 16px 16px;
+    }
+
+    /* Section headings */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin: 18px 0 10px;
+    }
+
+    /* ── PRICE GRID ──────────────────────────────────────────────── */
+    #price-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .price-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px 12px 12px;
+      text-align: center;
+      border: 1.5px solid transparent;
+    }
+    .price-card.has-data {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+    .price-card .fuel-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .price-card .fuel-price {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .price-card.has-data .fuel-price { color: var(--accent); }
+    .price-card .fuel-age {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 5px;
+    }
+    .price-card.stale .fuel-price { color: var(--text3); }
+    .price-card.stale .fuel-label::after { content: ' · old'; color: var(--text3); }
+
+    /* ── REPORT FORM ─────────────────────────────────────────────── */
+    #report-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* ── FORM INPUTS ─────────────────────────────────────────────── */
+    #post-form select,
+    #post-form input,
+    #post-form textarea {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 16px; /* prevent iOS zoom */
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    #post-form select:focus,
+    #post-form input:focus,
+    #post-form textarea:focus {
+      border-color: var(--accent);
+      background: var(--bg);
+    }
+    #post-form textarea { resize: none; height: 80px; }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .price-row:focus-within { border-color: var(--accent); background: var(--bg); }
+    .price-row .dollar {
+      padding: 12px 0 12px 14px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+    #price-input {
+      flex: 1;
+      border: none !important;
+      background: transparent !important;
+      border-radius: 0 !important;
+      padding-left: 4px !important;
+    }
+    #price-input:focus { background: transparent !important; }
+
+    #price-row-wrapper { display: none; }
+    #price-row-wrapper.visible { display: flex; }
+
+    #post-form { display: flex; flex-direction: column; gap: 10px; }
+
+    #post-char-count {
+      font-size: 11px;
+      color: var(--text3);
+      text-align: right;
+      margin-top: -6px;
+    }
+    #post-char-count.warn { color: var(--accent); }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:active { background: #b71c1c; }
+    .btn-primary:disabled {
+      background: var(--border);
+      color: var(--text3);
+      cursor: default;
+    }
+
+    /* Honeypot */
+    .hp-field { display: none !important; }
+
+    /* ── REPORTS LIST ─────────────────────────────────────────────── */
+    #reports-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .no-data-msg {
+      font-size: 13px;
+      color: var(--text3);
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    .report-card {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px 10px;
+    }
+
+    .report-price-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 7px;
+    }
+
+    .report-comment {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      word-break: break-word;
+      margin-bottom: 8px;
+    }
+
+    .report-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .report-time {
+      font-size: 11px;
+      color: var(--text3);
+      flex: 1;
+    }
+
+    .reply-btn {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .reply-btn:active { background: var(--surface2); }
+
+    /* Inline reply form */
+    .reply-form {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .reply-form.open { display: flex; }
+    .reply-form textarea {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 15px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      resize: none;
+      height: 70px;
+    }
+    .reply-form textarea:focus { border-color: var(--accent); background: var(--bg); }
+    .reply-submit {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    .reply-submit:active { background: #b71c1c; }
+    .reply-submit:disabled { background: var(--border); color: var(--text3); }
+
+    /* Replies thread */
+    .replies-list {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reply-item {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 9px 11px;
+      margin-left: 12px;
+      border-left: 2px solid var(--border);
+    }
+
+    .reply-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .reply-time {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    /* ── DARK MODE ───────────────────────────────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --accent: #ef5350;
+        --accent-light: #3a1010;
+        --bg: #1a1a1a;
+        --surface: #242424;
+        --surface2: #2e2e2e;
+        --text: #f0f0f0;
+        --text2: #aaaaaa;
+        --text3: #666666;
+        --border: #333333;
+      }
+      html, body { background: #111111; }
+      #loading-overlay { background: rgba(18,18,18,0.94); }
+      .maplibregl-ctrl-group { filter: invert(1) hue-rotate(180deg); }
+    }
+
+    /* ── REDUCED MOTION ──────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      #bottom-sheet, #sheet-backdrop, #toast, #loading-overlay { transition: none; }
+      .spinner { animation: none; border-top-color: var(--accent); }
+    }
+
+    /* ── ADMIN PANEL ─────────────────────────────────────────────── */
+    #admin-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #admin-panel.open { display: flex; }
+    #admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #admin-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+    #admin-header span {
+      font-size: 12px;
+      color: var(--text3);
+    }
+    #admin-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    #admin-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .admin-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+    .admin-row:active { opacity: 0.7; }
+    .admin-row-station {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .admin-row-body {
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .admin-row-meta {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── SEARCH WIDGET ───────────────────────────────────────────── */
+    #search-widget {
+      position: fixed;
+      top: calc(var(--safe-top) + 10px);
+      right: calc(var(--safe-right) + 10px);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    #search-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: none;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #search-toggle:active { background: var(--surface); }
+
+    #search-bar {
+      display: none;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+      width: 272px;
+    }
+    #search-bar.open { display: flex; }
+
+    #search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: var(--font);
+      font-size: 15px;
+      color: var(--text);
+      padding: 11px 4px 11px 14px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    #search-input::placeholder { color: var(--text3); }
+    /* Remove native clear button on webkit */
+    #search-input::-webkit-search-cancel-button { display: none; }
+
+    #search-clear {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text3);
+      padding: 0 12px 0 4px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    #search-clear:active { color: var(--text); }
+
+    #search-results {
+      display: none;
+      background: var(--bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      width: 272px;
+      max-height: 300px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #search-results.open { display: block; }
+
+    .search-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text3);
+      padding: 10px 14px 4px;
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+    }
+    .search-result-item:first-child { border-top: none; }
+    .search-result-item:active { background: var(--surface); }
+
+    .search-result-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      width: 20px;
+      text-align: center;
+    }
+
+    .search-result-text { flex: 1; min-width: 0; }
+    .search-result-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .search-result-sub {
+      font-size: 11px;
+      color: var(--text3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-no-results {
+      font-size: 13px;
+      color: var(--text3);
+      padding: 14px;
+      text-align: center;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      #search-toggle,
+      #search-bar,
+      #search-results,
+      #filter-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
+    }
+
+    /* ── PRICE FILTER PANEL ──────────────────────────────────────── */
+    #filter-panel {
+      display: none;
+      width: 272px;
+      background: var(--bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    #filter-panel.open { display: block; }
+
+    #filter-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+    }
+
+    #filter-toggle-btn {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+    }
+    #filter-toggle-btn:active { opacity: 0.7; }
+
+    #filter-clear-btn {
+      display: none;
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 0;
+    }
+    #filter-clear-btn.visible { display: block; }
+    #filter-clear-btn:active { color: var(--accent); }
+
+    #filter-controls {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+    #filter-controls.open { display: flex; }
+
+    #filter-fuel {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 15px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: var(--text);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    #filter-fuel:focus { border-color: var(--accent); }
+
+    #filter-range-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-dollar {
+      font-size: 14px;
+      color: var(--text2);
+      font-weight: 600;
+    }
+    .filter-sep {
+      font-size: 14px;
+      color: var(--text3);
+    }
+    #filter-min,
+    #filter-max {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 15px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      color: var(--text);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      min-width: 0;
+    }
+    #filter-min:focus,
+    #filter-max:focus { border-color: var(--accent); }
+
+    #filter-apply-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #filter-apply-btn:active { background: #b71c1c; }
+    #filter-apply-btn:disabled { background: var(--border); color: var(--text3); cursor: default; }
+
+    /* Green match dot label on map */
+    /* (layer rendered by MapLibre, no extra CSS needed) */
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Admin panel (hidden unless ?admin=TOKEN in URL) -->
+  <div id="admin-panel" role="dialog" aria-modal="true">
+    <div id="admin-header">
+      <div>
+        <h2>Admin Feed</h2>
+        <span id="admin-count"></span>
+      </div>
+      <button id="admin-close" aria-label="Close admin">×</button>
+    </div>
+    <div id="admin-feed"></div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loading-text">Finding gas stations…</p>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <!-- Search widget -->
+  <div id="search-widget">
+    <button id="search-toggle" aria-label="Search">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="2"/>
+        <line x1="11.7" y1="11.7" x2="16" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div id="search-bar">
+      <input id="search-input" type="search" placeholder="Search stations or address…" autocomplete="off" />
+      <button id="search-clear" aria-label="Clear">×</button>
+    </div>
+    <div id="search-results"></div>
+    <div id="filter-panel">
+      <div id="filter-toggle-row">
+        <button id="filter-toggle-btn">Filter by price</button>
+        <button id="filter-clear-btn">× Clear filter</button>
+      </div>
+      <div id="filter-controls">
+        <select id="filter-fuel">
+          <option value="regular">Regular</option>
+          <option value="mid">Mid-Grade</option>
+          <option value="premium">Premium</option>
+          <option value="diesel">Diesel</option>
+        </select>
+        <div id="filter-range-row">
+          <span class="filter-dollar">$</span>
+          <input id="filter-min" type="number" placeholder="3.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
+          <span class="filter-sep">–</span>
+          <span class="filter-dollar">$</span>
+          <input id="filter-max" type="number" placeholder="5.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
+        </div>
+        <button id="filter-apply-btn">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom sheet backdrop -->
+  <div id="sheet-backdrop"></div>
+
+  <!-- Bottom sheet -->
+  <div id="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="station-name">
+    <div id="sheet-handle"></div>
+
+    <div id="sheet-header">
+      <div id="station-brand"></div>
+      <h2 id="station-name"></h2>
+      <p id="station-address"></p>
+      <button id="sheet-close" aria-label="Close">×</button>
+    </div>
+
+    <div id="sheet-body">
+
+      <!-- Prices -->
+      <p class="section-title">Recent Prices</p>
+      <div id="price-grid">
+        <div class="price-card" id="card-regular">
+          <div class="fuel-label">Regular</div>
+          <div class="fuel-price">—</div>
+          <div class="fuel-age">No reports</div>
+        </div>
+        <div class="price-card" id="card-mid">
+          <div class="fuel-label">Mid-Grade</div>
+          <div class="fuel-price">—</div>
+          <div class="fuel-age">No reports</div>
+        </div>
+        <div class="price-card" id="card-premium">
+          <div class="fuel-label">Premium</div>
+          <div class="fuel-price">—</div>
+          <div class="fuel-age">No reports</div>
+        </div>
+        <div class="price-card" id="card-diesel">
+          <div class="fuel-label">Diesel</div>
+          <div class="fuel-price">—</div>
+          <div class="fuel-age">No reports</div>
+        </div>
+      </div>
+
+      <!-- Reports feed -->
+      <p class="section-title">Reports</p>
+      <div id="reports-list"></div>
+
+      <!-- Unified post form -->
+      <p class="section-title">Post a Report</p>
+      <form id="post-form" novalidate>
+        <!-- Honeypot -->
+        <input class="hp-field" name="website" type="text" tabindex="-1" autocomplete="off" />
+
+        <select id="fuel-type">
+          <option value="">Add a price (optional)…</option>
+          <option value="regular">Regular</option>
+          <option value="mid">Mid-Grade</option>
+          <option value="premium">Premium</option>
+          <option value="diesel">Diesel</option>
+        </select>
+
+        <div class="price-row" id="price-row-wrapper">
+          <span class="dollar">$</span>
+          <input id="price-input" type="number" step="0.01" min="1.00" max="9.99"
+                 placeholder="4.29" inputmode="decimal" />
+        </div>
+
+        <textarea id="post-comment" placeholder="Leave a note (optional)…"
+                  maxlength="280" rows="3"></textarea>
+        <p id="post-char-count">280</p>
+
+        <button type="submit" class="btn-primary" id="post-submit">Post Report</button>
+      </form>
+
+    </div><!-- end #sheet-body -->
+  </div><!-- end #bottom-sheet -->
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ═══════════════════════════════════════════════════════════════
+    // FIREBASE CONFIG — REPLACE WITH YOUR OWN VALUES
+    // Get these from: Firebase Console > Project Settings > Your Apps
+    // ═══════════════════════════════════════════════════════════════
+    const FIREBASE_CONFIG = {
+      apiKey:            "AIzaSyBjTuKggNv2LEQbTXe46FOXvVoT_O2O5I8",
+      authDomain:        "gasio-a83d9.firebaseapp.com",
+      projectId:         "gasio-a83d9",
+      storageBucket:     "gasio-a83d9.firebasestorage.app",
+      messagingSenderId: "751558372739",
+      appId:             "1:751558372739:web:d2e1d039468cfb2fe41ab6"
+    };
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── CONFIG ───────────────────────────────────────────────────────
+    const DARK_MODE   = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const MAP_STYLE   = DARK_MODE
+      ? 'https://tiles.openfreemap.org/styles/dark'
+      : 'https://tiles.openfreemap.org/styles/liberty';
+    const LA_CENTER   = [-118.2437, 34.0522];
+    const LA_ZOOM     = 11;
+    const USER_ZOOM   = 14;
+    const CACHE_KEY   = 'gas_stations_v2';
+    const CACHE_TTL   = 7 * 24 * 60 * 60 * 1000; // 7 days
+    const RATE_KEY    = 'gas_rate_limits';
+    const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+    // Overpass query for LA gas stations
+    const OVERPASS_QUERY = `
+[out:json][timeout:30];
+(
+  node["amenity"="fuel"](33.70,-118.67,34.34,-118.15);
+  way["amenity"="fuel"](33.70,-118.67,34.34,-118.15);
+  relation["amenity"="fuel"](33.70,-118.67,34.34,-118.15);
+);
+out center tags;`.trim();
+
+    // ── STATE ────────────────────────────────────────────────────────
+    let map, db;
+    let currentStationId = null;
+    let sheetOpen = false;
+    let stationsGeoJSON = null;
+    let priceFilterActive = false;
+
+    // ── FIREBASE INIT ────────────────────────────────────────────────
+    function initFirebase() {
+      // Check if config has been filled in
+      if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+        console.warn('Firebase not configured. Prices and comments will not be saved.');
+        return false;
+      }
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        return true;
+      } catch (e) {
+        console.error('Firebase init failed:', e);
+        return false;
+      }
+    }
+
+    // ── MAP INIT ─────────────────────────────────────────────────────
+    function initMap() {
+      map = new maplibregl.Map({
+        container: 'map',
+        style: MAP_STYLE,
+        center: LA_CENTER,
+        zoom: LA_ZOOM,
+        minZoom: 9,
+        maxZoom: 18,
+        maxBounds: [
+          [-119.0, 33.4],  // SW corner (beyond Santa Catalina Island / south OC)
+          [-117.4, 34.9]   // NE corner (beyond Santa Clarita / San Bernardino edge)
+        ],
+        attributionControl: false,
+        pitchWithRotate: false,
+        maxPitch: 0
+      });
+
+      // Compact attribution
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        'bottom-left'
+      );
+
+      // Zoom controls (hide on very small screens, user can pinch)
+      if (window.innerWidth > 375) {
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+      }
+
+      // Geolocate control (shows live blue dot)
+      const geolocate = new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true
+      });
+      map.addControl(geolocate, 'top-right');
+      map.on('load', function () {
+        geolocate.trigger();
+      });
+
+      map.on('load', onMapLoad);
+    }
+
+    // ── GPS ──────────────────────────────────────────────────────────
+    function requestGPS() {
+      if (!navigator.geolocation) {
+        centerOnLA();
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          map.flyTo({
+            center: [pos.coords.longitude, pos.coords.latitude],
+            zoom: USER_ZOOM,
+            duration: 1600,
+            essential: true
+          });
+        },
+        function () {
+          centerOnLA();
+          showToast('Enable location to see nearby stations');
+        },
+        { timeout: 8000, maximumAge: 60000 }
+      );
+    }
+
+    function centerOnLA() {
+      map.flyTo({ center: LA_CENTER, zoom: LA_ZOOM, duration: 800 });
+    }
+
+    // ── MAP LOAD ─────────────────────────────────────────────────────
+    async function onMapLoad() {
+      // Request GPS
+      requestGPS();
+
+      setLoadingText('Finding gas stations…');
+      try {
+        const geojson = await loadStations();
+        stationsGeoJSON = geojson;
+        addStationsToMap(geojson);
+      } catch (e) {
+        console.error('Failed to load stations:', e);
+        showToast('Could not load stations. Try refreshing.');
+      }
+
+      hideLoading();
+    }
+
+    // Load gas pin SVG into MapLibre, returns a Promise
+    function loadGasPin() {
+      return new Promise(function (resolve, reject) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="14" fill="#d32f2f" stroke="white" stroke-width="2"/>
+          <text x="16" y="21" font-size="14" text-anchor="middle" font-family="sans-serif" fill="white">G</text>
+        </svg>`;
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image(32, 32);
+        img.onload = function () {
+          if (!map.hasImage('gas-pin')) {
+            map.addImage('gas-pin', img);
+          }
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          reject(new Error('Failed to load gas pin image'));
+        };
+        img.src = url;
+      });
+    }
+
+    // ── STATION DATA ─────────────────────────────────────────────────
+    async function loadStations() {
+      // Try localStorage cache first
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            console.log('Loaded stations from cache:', data.features.length);
+            return data;
+          }
+        }
+      } catch (e) { /* ignore cache errors */ }
+
+      // Fetch from Overpass
+      try {
+        setLoadingText('Loading gas stations…');
+        const geojson = await fetchFromOverpass();
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: geojson, timestamp: Date.now() }));
+        } catch (e) { /* storage might be full */ }
+        console.log('Loaded stations from Overpass:', geojson.features.length);
+        return geojson;
+      } catch (e) {
+        console.warn('Overpass failed, trying static fallback:', e);
+      }
+
+      // Fallback to static file
+      setLoadingText('Loading stations…');
+      const res = await fetch('./stations.geojson');
+      if (!res.ok) throw new Error('Static fallback not found');
+      const geojson = await res.json();
+      console.log('Loaded stations from static file:', geojson.features.length);
+      return geojson;
+    }
+
+    async function fetchFromOverpass() {
+      const res = await fetch('https://overpass.kumi.systems/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(OVERPASS_QUERY)
+      });
+      if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
+      const json = await res.json();
+      return overpassToGeoJSON(json);
+    }
+
+    function overpassToGeoJSON(data) {
+      const features = [];
+      for (const el of data.elements) {
+        let lat, lon;
+        if (el.type === 'node') {
+          lat = el.lat;
+          lon = el.lon;
+        } else if (el.center) {
+          lat = el.center.lat;
+          lon = el.center.lon;
+        } else {
+          continue;
+        }
+        if (!lat || !lon) continue;
+
+        const tags = el.tags || {};
+        const name    = tags.name || tags.brand || tags.operator || 'Gas Station';
+        const brand   = tags.brand || '';
+        const street  = tags['addr:street'] || '';
+        const housenr = tags['addr:housenumber'] || '';
+        const city    = tags['addr:city'] || '';
+        const address = [housenr, street, city].filter(Boolean).join(' ') || '';
+
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: {
+            id:      String(el.id),
+            name,
+            brand,
+            address
+          }
+        });
+      }
+      return { type: 'FeatureCollection', features };
+    }
+
+    // ── ADD STATIONS TO MAP ──────────────────────────────────────────
+    function addStationsToMap(geojson) {
+      map.addSource('stations', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 13,
+        clusterRadius: 45
+      });
+
+      // Cluster circles
+      map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'stations',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': '#d32f2f',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            18, 10,
+            24, 50,
+            30
+          ]
+        }
+      });
+
+      // Cluster count labels
+      map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'stations',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Bold'],
+          'text-size': 12
+        },
+        paint: {
+          'text-color': '#ffffff'
+        }
+      });
+
+      // Individual station pins — outer white ring
+      map.addLayer({
+        id: 'station-pins-border',
+        type: 'circle',
+        source: 'stations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-radius': 9,
+          'circle-color': '#ffffff',
+          'circle-opacity': 0.9
+        }
+      });
+
+      // Individual station pins — red fill
+      map.addLayer({
+        id: 'station-pins',
+        type: 'circle',
+        source: 'stations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#d32f2f',
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Click on individual pin → open sheet
+      map.on('click', 'station-pins', function (e) {
+        const props = e.features[0].properties;
+        openSheet(props);
+      });
+
+      // Click on cluster → zoom in
+      map.on('click', 'clusters', function (e) {
+        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        const clusterId = features[0].properties.cluster_id;
+        map.getSource('stations').getClusterExpansionZoom(clusterId, function (err, zoom) {
+          if (err) return;
+          map.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom: zoom + 0.5
+          });
+        });
+      });
+
+      // Green overlay layer for price filter (hidden until filter is applied)
+      map.addLayer({
+        id: 'station-pins-match',
+        type: 'circle',
+        source: 'stations',
+        filter: ['in', ['get', 'id'], ['literal', ['__none__']]],
+        paint: {
+          'circle-radius': 11,
+          'circle-color': '#2e7d32',
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.92
+        }
+      });
+
+      // Cursor style
+      map.on('mouseenter', 'station-pins', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'station-pins', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'clusters',     () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'clusters',     () => { map.getCanvas().style.cursor = ''; });
+    }
+
+    // ── BOTTOM SHEET ──────────────────────────────────────────────────
+    function openSheet(props) {
+      currentStationId = props.id;
+
+      document.getElementById('station-brand').textContent   = props.brand || '';
+      document.getElementById('station-name').textContent    = props.name  || 'Gas Station';
+      document.getElementById('station-address').textContent = props.address || '';
+
+      // Reset price cards
+      ['regular', 'mid', 'premium', 'diesel'].forEach(resetCard);
+
+      // Clear reports list
+      document.getElementById('reports-list').innerHTML =
+        '<p class="no-data-msg">Loading…</p>';
+
+      // Show sheet
+      document.getElementById('bottom-sheet').classList.add('open');
+      document.getElementById('sheet-backdrop').classList.add('visible');
+      sheetOpen = true;
+
+      // Disable map pan while sheet is open (prevents accidental map drag)
+      map.dragPan.disable();
+      map.scrollZoom.disable();
+
+      // Reset form fields
+      document.getElementById('fuel-type').value     = '';
+      document.getElementById('price-input').value   = '';
+      document.getElementById('price-row-wrapper').classList.remove('visible');
+      document.getElementById('post-comment').value  = '';
+      document.getElementById('post-char-count').textContent = '280';
+
+      // Load live data
+      loadStationData(props.id);
+    }
+
+    function closeSheet() {
+      const sheet = document.getElementById('bottom-sheet');
+      sheet.style.transition = '';
+      sheet.style.transform = '';
+      sheet.classList.remove('open');
+      document.getElementById('sheet-backdrop').classList.remove('visible');
+      sheetOpen = false;
+      currentStationId = null;
+
+      map.dragPan.enable();
+      map.scrollZoom.enable();
+    }
+
+    function resetCard(fuelType) {
+      const card = document.getElementById('card-' + fuelType);
+      card.classList.remove('has-data', 'stale');
+      card.querySelector('.fuel-price').textContent = '—';
+      card.querySelector('.fuel-age').textContent   = 'No reports';
+    }
+
+    // ── DRAG TO DISMISS ───────────────────────────────────────────────
+    function setupDragToDismiss() {
+      const sheet = document.getElementById('bottom-sheet');
+      const handle = document.getElementById('sheet-handle');
+      const header = document.getElementById('sheet-header');
+      let startY = 0, currentDelta = 0, dragging = false;
+
+      function onStart(e) {
+        if (!sheetOpen) return;
+        const t = e.touches ? e.touches[0] : e;
+        startY = t.clientY;
+        dragging = true;
+        currentDelta = 0;
+        sheet.style.transition = 'none';
+      }
+
+      function onMove(e) {
+        if (!dragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        currentDelta = Math.max(0, t.clientY - startY);
+        sheet.style.transform = `translateY(${currentDelta}px)`;
+      }
+
+      function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        if (currentDelta > 100) {
+          closeSheet();
+        } else {
+          sheet.style.transition = '';
+          sheet.style.transform = 'translateY(0)';
+        }
+      }
+
+      // Only attach drag to the handle pill, not the header (avoids swallowing close-button taps)
+      handle.addEventListener('touchstart', onStart, { passive: true });
+      handle.addEventListener('touchmove',  onMove,  { passive: true });
+      handle.addEventListener('touchend',   onEnd,   { passive: true });
+
+      document.getElementById('sheet-backdrop').addEventListener('click', closeSheet);
+
+      const closeBtn = document.getElementById('sheet-close');
+      closeBtn.addEventListener('touchend', function (e) {
+        e.stopPropagation();
+        closeSheet();
+      });
+      closeBtn.addEventListener('click', closeSheet);
+    }
+
+    // ── FIRESTORE ────────────────────────────────────────────────────
+    async function loadStationData(stationId) {
+      const list = document.getElementById('reports-list');
+      if (!db) {
+        list.innerHTML = '<p class="no-data-msg">Firebase not configured.</p>';
+        return;
+      }
+      list.innerHTML = '<p class="no-data-msg">Loading…</p>';
+      try {
+        const snap = await db
+          .collection('station_reports')
+          .doc(stationId)
+          .collection('reports')
+          .orderBy('created_at', 'desc')
+          .limit(20)
+          .get();
+
+        // Populate price grid from most recent price per fuel type
+        const byFuel = {};
+        snap.forEach(function (doc) {
+          const d = doc.data();
+          if (d.fuel_type && d.price_cents && !byFuel[d.fuel_type]) {
+            byFuel[d.fuel_type] = d;
+          }
+        });
+        ['regular', 'mid', 'premium', 'diesel'].forEach(function (ft) {
+          if (byFuel[ft]) renderPriceCard(ft, byFuel[ft]);
+        });
+
+        if (snap.empty) {
+          list.innerHTML = '<p class="no-data-msg">No reports yet. Be the first!</p>';
+          return;
+        }
+
+        // Fetch replies for reports that have them, in parallel
+        const reports = [];
+        snap.forEach(function (doc) { reports.push({ id: doc.id, ...doc.data() }); });
+
+        const replyFetches = reports.map(function (r) {
+          if (!r.reply_count) return Promise.resolve([]);
+          return db
+            .collection('station_reports')
+            .doc(stationId)
+            .collection('reports')
+            .doc(r.id)
+            .collection('replies')
+            .orderBy('created_at', 'asc')
+            .get()
+            .then(function (s) {
+              const replies = [];
+              s.forEach(function (d) { replies.push({ id: d.id, ...d.data() }); });
+              return replies;
+            });
+        });
+
+        const allReplies = await Promise.all(replyFetches);
+        list.innerHTML = '';
+        reports.forEach(function (r, i) {
+          list.appendChild(buildReportCard(r, allReplies[i] || [], stationId));
+        });
+
+      } catch (e) {
+        console.error('Firestore error:', e);
+        list.innerHTML = '<p class="no-data-msg">Could not load reports.</p>';
+      }
+    }
+
+    function renderPriceCard(fuelType, report) {
+      const card = document.getElementById('card-' + fuelType);
+      if (!card) return;
+      const dollars = (report.price_cents / 100).toFixed(2);
+      const date = report.created_at?.toDate?.() || new Date(report.created_at);
+      const ageMs = Date.now() - date.getTime();
+      const isStale = ageMs > 7 * 24 * 60 * 60 * 1000;
+
+      card.classList.add('has-data');
+      if (isStale) card.classList.add('stale');
+      card.querySelector('.fuel-price').textContent = '$' + dollars;
+      card.querySelector('.fuel-age').textContent   = timeAgo(date);
+    }
+
+    function buildReportCard(report, replies, stationId) {
+      const date = report.created_at?.toDate?.() || new Date();
+      const card = document.createElement('div');
+      card.className = 'report-card';
+
+      let inner = '';
+
+      // Price badge
+      if (report.fuel_type && report.price_cents) {
+        const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
+        const dollars = (report.price_cents / 100).toFixed(2);
+        inner += '<div class="report-price-badge">' +
+          escapeHTML(fuelLabel[report.fuel_type] || report.fuel_type) +
+          ' $' + dollars + '</div>';
+      }
+
+      // Comment text
+      if (report.comment) {
+        inner += '<p class="report-comment">' + escapeHTML(report.comment) + '</p>';
+      }
+
+      // Meta row
+      inner += '<div class="report-meta">' +
+        '<span class="report-time">' + timeAgo(date) + '</span>' +
+        '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
+        '</div>';
+
+      // Replies
+      if (replies.length > 0) {
+        inner += '<div class="replies-list">';
+        replies.forEach(function (reply) {
+          const rDate = reply.created_at?.toDate?.() || new Date();
+          inner += '<div class="reply-item">' +
+            '<p class="reply-text">' + escapeHTML(reply.body) + '</p>' +
+            '<p class="reply-time">' + timeAgo(rDate) + '</p>' +
+            '</div>';
+        });
+        inner += '</div>';
+      }
+
+      // Inline reply form
+      inner += '<div class="reply-form" id="reply-form-' + report.id + '">' +
+        '<textarea placeholder="Write a reply…" maxlength="280"></textarea>' +
+        '<button class="reply-submit" data-report-id="' + report.id + '">Post Reply</button>' +
+        '</div>';
+
+      card.innerHTML = inner;
+
+      // Wire reply button toggle
+      card.querySelector('.reply-btn').addEventListener('click', function () {
+        const form = document.getElementById('reply-form-' + report.id);
+        form.classList.toggle('open');
+        if (form.classList.contains('open')) form.querySelector('textarea').focus();
+      });
+
+      // Wire reply submit
+      card.querySelector('.reply-submit').addEventListener('click', async function () {
+        const btn = this;
+        const textarea = document.getElementById('reply-form-' + report.id).querySelector('textarea');
+        const body = textarea.value.trim();
+        if (!body) { showToast('Write something first'); return; }
+        if (!db) { showToast('Firebase not configured.'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Posting…';
+        try {
+          const reportRef = db
+            .collection('station_reports')
+            .doc(stationId)
+            .collection('reports')
+            .doc(report.id);
+
+          await reportRef.collection('replies').add({
+            body,
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          await reportRef.update({
+            reply_count: firebase.firestore.FieldValue.increment(1)
+          });
+
+          showToast('Reply posted!');
+          textarea.value = '';
+          document.getElementById('reply-form-' + report.id).classList.remove('open');
+          loadStationData(stationId);
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to post reply.');
+          btn.disabled = false;
+          btn.textContent = 'Post Reply';
+        }
+      });
+
+      return card;
+    }
+
+    // ── FORMS ─────────────────────────────────────────────────────────
+    function setupForms() {
+      // Show/hide price input based on fuel type selection
+      const fuelSelect = document.getElementById('fuel-type');
+      const priceWrapper = document.getElementById('price-row-wrapper');
+      fuelSelect.addEventListener('change', function () {
+        priceWrapper.classList.toggle('visible', !!this.value);
+        if (!this.value) document.getElementById('price-input').value = '';
+      });
+
+      // Char counter for comment textarea
+      const postComment = document.getElementById('post-comment');
+      const charCount   = document.getElementById('post-char-count');
+      postComment.addEventListener('input', function () {
+        const remaining = 280 - this.value.length;
+        charCount.textContent = remaining;
+        charCount.classList.toggle('warn', remaining < 30);
+      });
+
+      // Unified post form
+      document.getElementById('post-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // Honeypot check
+        if (this.querySelector('[name="website"]').value) return;
+
+        const fuelType  = fuelSelect.value;
+        const priceVal  = parseFloat(document.getElementById('price-input').value);
+        const comment   = postComment.value.trim();
+        const hasPrice  = fuelType && !isNaN(priceVal) && priceVal >= 1 && priceVal <= 9.99;
+        const hasComment = comment.length > 0;
+
+        // Validate: need at least a price OR a comment
+        if (!hasPrice && !hasComment) {
+          showToast('Add a price or a comment');
+          return;
+        }
+        if (fuelType && !hasPrice) {
+          showToast('Enter a valid price ($1.00 – $9.99)');
+          return;
+        }
+        if (comment.length > 280) {
+          showToast('Comment too long');
+          return;
+        }
+        if (isRateLimited(currentStationId, 'report')) {
+          showToast('Wait 1 hour before posting again here');
+          return;
+        }
+        if (!db) {
+          showToast('Firebase not configured.');
+          return;
+        }
+
+        const btn = document.getElementById('post-submit');
+        btn.disabled = true;
+        btn.textContent = 'Posting…';
+
+        try {
+          await db
+            .collection('station_reports')
+            .doc(currentStationId)
+            .collection('reports')
+            .add({
+              fuel_type:   hasPrice ? fuelType : null,
+              price_cents: hasPrice ? Math.round(priceVal * 100) : null,
+              comment:     hasComment ? comment : null,
+              reply_count: 0,
+              created_at:  firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+          setRateLimit(currentStationId, 'report');
+          showToast('Report posted — thanks!');
+
+          // Reset form
+          fuelSelect.value = '';
+          priceWrapper.classList.remove('visible');
+          document.getElementById('price-input').value = '';
+          postComment.value = '';
+          charCount.textContent = '280';
+
+          loadStationData(currentStationId);
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to post. Try again.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Post Report';
+        }
+      });
+    }
+
+    // ── RATE LIMITING ─────────────────────────────────────────────────
+    function getRateLimits() {
+      try {
+        return JSON.parse(localStorage.getItem(RATE_KEY) || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function isRateLimited(stationId, type) {
+      const limits = getRateLimits();
+      const key = stationId + '_' + type;
+      const last = limits[key];
+      return last && (Date.now() - last < RATE_WINDOW);
+    }
+
+    function setRateLimit(stationId, type) {
+      const limits = getRateLimits();
+      limits[stationId + '_' + type] = Date.now();
+      try {
+        localStorage.setItem(RATE_KEY, JSON.stringify(limits));
+      } catch (e) { /* ignore */ }
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────
+    function timeAgo(date) {
+      if (!(date instanceof Date)) return '';
+      const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (sec < 60)   return 'just now';
+      if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+      if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+      const days = Math.floor(sec / 86400);
+      return days === 1 ? '1 day ago' : days + ' days ago';
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showToast(msg, duration) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(function () { el.classList.remove('show'); }, duration || 2800);
+    }
+
+    function setLoadingText(msg) {
+      document.getElementById('loading-text').textContent = msg;
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.add('hidden');
+    }
+
+    // ── ADMIN ─────────────────────────────────────────────────────────
+    // Access via: yourdomain.com/?admin=YOUR_SECRET_TOKEN
+    // Change the token below to something only you know
+    const ADMIN_TOKEN = 'peanutbutter';
+
+    function checkAdmin() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') !== ADMIN_TOKEN) return;
+
+      // Valid token — show the panel and load feed
+      document.getElementById('admin-panel').classList.add('open');
+      loadAdminFeed();
+
+      document.getElementById('admin-close').addEventListener('click', function () {
+        document.getElementById('admin-panel').classList.remove('open');
+        // Strip token from URL so it doesn't linger
+        history.replaceState(null, '', window.location.pathname);
+      });
+    }
+
+    async function loadAdminFeed() {
+      const feed = document.getElementById('admin-feed');
+      const countEl = document.getElementById('admin-count');
+      if (!db) {
+        feed.innerHTML = '<p class="no-data-msg">Firebase not ready.</p>';
+        return;
+      }
+      feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
+      try {
+        // collectionGroup query without orderBy — no index required
+        const snap = await db
+          .collectionGroup('reports')
+          .limit(100)
+          .get();
+
+        if (snap.empty) {
+          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
+          return;
+        }
+
+        // Sort client-side by created_at descending
+        const docs = [];
+        snap.forEach(function (doc) { docs.push(doc); });
+        docs.sort(function (a, b) {
+          const ta = a.data().created_at ? a.data().created_at.toMillis() : 0;
+          const tb = b.data().created_at ? b.data().created_at.toMillis() : 0;
+          return tb - ta;
+        });
+
+        countEl.textContent = docs.length + ' reports';
+        feed.innerHTML = '';
+
+        docs.forEach(function (doc) {
+          const d = doc.data();
+          // Parent path: station_reports/{stationId}/reports/{reportId}
+          const stationId = doc.ref.parent.parent.id;
+          const date = d.created_at ? d.created_at.toDate() : new Date();
+
+          let bodyParts = [];
+          if (d.fuel_type && d.price_cents) {
+            const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
+            bodyParts.push((fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2));
+          }
+          if (d.comment) bodyParts.push('"' + d.comment + '"');
+
+          const row = document.createElement('div');
+          row.className = 'admin-row';
+          row.innerHTML =
+            '<div class="admin-row-station">' + escapeHTML(stationId) + '</div>' +
+            '<div class="admin-row-body">' + escapeHTML(bodyParts.join(' · ') || '(no content)') + '</div>' +
+            '<div class="admin-row-meta">' + date.toLocaleString() + '</div>';
+
+          // Click → fly to station and open its sheet
+          row.addEventListener('click', function () {
+            const feature = stationsGeoJSON && stationsGeoJSON.features.find(function (f) {
+              return String(f.properties.id) === String(stationId);
+            });
+            // Close admin panel
+            document.getElementById('admin-panel').classList.remove('open');
+            history.replaceState(null, '', window.location.pathname);
+            if (feature) {
+              const coords = feature.geometry.coordinates;
+              map.flyTo({ center: coords, zoom: 16, duration: 900, essential: true });
+              map.once('moveend', function () {
+                openSheet(feature.properties);
+              });
+            } else {
+              showToast('Station not found in current map data');
+            }
+          });
+
+          feed.appendChild(row);
+        });
+      } catch (e) {
+        console.error('Admin feed error:', e);
+        feed.innerHTML = '<p class="no-data-msg">Error loading feed: ' + e.message + '</p>';
+      }
+    }
+
+    // ── SEARCH ────────────────────────────────────────────────────────
+    function setupSearch() {
+      const widget   = document.getElementById('search-widget');
+      const toggle   = document.getElementById('search-toggle');
+      const bar      = document.getElementById('search-bar');
+      const input    = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear');
+      const results  = document.getElementById('search-results');
+
+      let debounceTimer = null;
+      let isOpen = false;
+
+      function openSearch() {
+        isOpen = true;
+        bar.classList.add('open');
+        document.getElementById('filter-panel').classList.add('open');
+        input.focus();
+      }
+
+      function closeSearch() {
+        isOpen = false;
+        bar.classList.remove('open');
+        results.classList.remove('open');
+        results.innerHTML = '';
+        input.value = '';
+        clearTimeout(debounceTimer);
+        document.getElementById('filter-panel').classList.remove('open');
+      }
+
+      toggle.addEventListener('click', function () {
+        if (isOpen) { closeSearch(); } else { openSearch(); }
+      });
+
+      clearBtn.addEventListener('click', function () { closeSearch(); });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isOpen) closeSearch();
+      });
+
+      // Close when tapping outside the widget
+      document.addEventListener('pointerdown', function (e) {
+        if (isOpen && !widget.contains(e.target)) closeSearch();
+      });
+
+      // ── Station search (instant, from loaded GeoJSON)
+      function searchStations(q) {
+        if (!stationsGeoJSON) return [];
+        const lq = q.toLowerCase();
+        return stationsGeoJSON.features.filter(function (f) {
+          const p = f.properties;
+          return (p.name  && p.name.toLowerCase().includes(lq)) ||
+                 (p.brand && p.brand.toLowerCase().includes(lq));
+        }).slice(0, 4);
+      }
+
+      // ── Nominatim geocoding (debounced 400ms)
+      async function geocodeQuery(q) {
+        const url = 'https://nominatim.openstreetmap.org/search?' + new URLSearchParams({
+          q: q,
+          format: 'json',
+          viewbox: '-119,34.9,-117.4,33.4',
+          bounded: '1',
+          limit: '4',
+          addressdetails: '1'
+        });
+        try {
+          const res = await fetch(url, {
+            headers: { 'Referer': location.origin || 'https://gasio.vercel.app' }
+          });
+          if (!res.ok) return [];
+          return await res.json();
+        } catch (e) {
+          return [];
+        }
+      }
+
+      // ── Render results into dropdown
+      function renderResults(stations, places) {
+        results.innerHTML = '';
+        const hasStations = stations.length > 0;
+        const hasPlaces   = places.length > 0;
+
+        if (!hasStations && !hasPlaces) {
+          results.innerHTML = '<p class="search-no-results">No results found</p>';
+          results.classList.add('open');
+          return;
+        }
+
+        if (hasStations) {
+          const label = document.createElement('div');
+          label.className = 'search-group-label';
+          label.textContent = 'Stations';
+          results.appendChild(label);
+
+          stations.forEach(function (feature) {
+            const p = feature.properties;
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.innerHTML =
+              '<span class="search-result-icon">⛽</span>' +
+              '<div class="search-result-text">' +
+                '<div class="search-result-name">' + escapeHTML(p.name || p.brand || 'Gas Station') + '</div>' +
+                (p.address ? '<div class="search-result-sub">' + escapeHTML(p.address) + '</div>' : '') +
+              '</div>';
+            item.addEventListener('pointerdown', function (e) {
+              e.preventDefault(); // prevent losing focus from input before click fires
+            });
+            item.addEventListener('click', function () {
+              closeSearch();
+              const coords = feature.geometry.coordinates;
+              map.flyTo({ center: coords, zoom: 16, duration: 900, essential: true });
+              map.once('moveend', function () { openSheet(p); });
+            });
+            results.appendChild(item);
+          });
+        }
+
+        if (hasPlaces) {
+          const label = document.createElement('div');
+          label.className = 'search-group-label';
+          label.textContent = 'Places';
+          results.appendChild(label);
+
+          places.forEach(function (place) {
+            const name = place.display_name.split(',')[0];
+            const sub  = place.display_name.split(',').slice(1, 3).join(',').trim();
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.innerHTML =
+              '<span class="search-result-icon">📍</span>' +
+              '<div class="search-result-text">' +
+                '<div class="search-result-name">' + escapeHTML(name) + '</div>' +
+                (sub ? '<div class="search-result-sub">' + escapeHTML(sub) + '</div>' : '') +
+              '</div>';
+            item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
+            item.addEventListener('click', function () {
+              closeSearch();
+              map.flyTo({ center: [parseFloat(place.lon), parseFloat(place.lat)], zoom: 15, duration: 900, essential: true });
+            });
+            results.appendChild(item);
+          });
+        }
+
+        results.classList.add('open');
+      }
+
+      // ── Input handler
+      input.addEventListener('input', function () {
+        const q = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (q.length < 2) {
+          results.classList.remove('open');
+          results.innerHTML = '';
+          return;
+        }
+
+        // Show station results immediately
+        const stationMatches = searchStations(q);
+
+        // Debounce geocoding
+        debounceTimer = setTimeout(async function () {
+          const placeMatches = await geocodeQuery(q);
+          renderResults(stationMatches, placeMatches);
+        }, 400);
+
+        // Show stations while waiting for geocode
+        if (stationMatches.length > 0) {
+          renderResults(stationMatches, []);
+        }
+      });
+    }
+
+    // ── PRICE FILTER ──────────────────────────────────────────────────
+    function setupPriceFilter() {
+      const toggleBtn  = document.getElementById('filter-toggle-btn');
+      const clearBtn   = document.getElementById('filter-clear-btn');
+      const controls   = document.getElementById('filter-controls');
+      const applyBtn   = document.getElementById('filter-apply-btn');
+      const fuelSelect = document.getElementById('filter-fuel');
+      const minInput   = document.getElementById('filter-min');
+      const maxInput   = document.getElementById('filter-max');
+
+      const EMPTY_FILTER = ['in', ['get', 'id'], ['literal', ['__none__']]];
+
+      function clearFilter() {
+        priceFilterActive = false;
+        clearBtn.classList.remove('visible');
+        if (map && map.getLayer('station-pins-match')) {
+          map.setFilter('station-pins-match', EMPTY_FILTER);
+        }
+      }
+
+      toggleBtn.addEventListener('click', function () {
+        const open = controls.classList.toggle('open');
+        toggleBtn.textContent = open ? 'Hide filter' : 'Filter by price';
+      });
+
+      clearBtn.addEventListener('click', clearFilter);
+
+      applyBtn.addEventListener('click', async function () {
+        if (!db) { showToast('Firebase not configured.'); return; }
+        if (!map || !map.getLayer('station-pins-match')) {
+          showToast('Map not ready yet — try again shortly'); return;
+        }
+
+        const fuelType = fuelSelect.value;
+        const minVal   = parseFloat(minInput.value);
+        const maxVal   = parseFloat(maxInput.value);
+
+        if (isNaN(minVal) || isNaN(maxVal)) {
+          showToast('Enter both a min and max price'); return;
+        }
+        if (minVal >= maxVal) {
+          showToast('Min price must be less than max'); return;
+        }
+
+        const minCents = Math.round(minVal * 100);
+        const maxCents = Math.round(maxVal * 100);
+
+        applyBtn.disabled = true;
+        applyBtn.textContent = 'Loading…';
+
+        try {
+          // Fetch all reports (same collectionGroup call as admin feed)
+          const snap = await db.collectionGroup('reports').limit(100).get();
+
+          // Build map of stationId → most recent price per fuel type
+          const priceMap = {};
+          // Sort by created_at ascending so later iterations overwrite with newer
+          const docs = [];
+          snap.forEach(function (doc) { docs.push(doc); });
+          docs.sort(function (a, b) {
+            const ta = a.data().created_at ? a.data().created_at.toMillis() : 0;
+            const tb = b.data().created_at ? b.data().created_at.toMillis() : 0;
+            return ta - tb; // ascending → last write wins below
+          });
+          docs.forEach(function (doc) {
+            const d = doc.data();
+            if (!d.fuel_type || !d.price_cents) return;
+            const sid = doc.ref.parent.parent.id;
+            if (!priceMap[sid]) priceMap[sid] = {};
+            priceMap[sid][d.fuel_type] = d.price_cents; // newer overwrites older
+          });
+
+          // Find stations matching the fuel+range filter
+          const matchedIds = [];
+          if (stationsGeoJSON) {
+            stationsGeoJSON.features.forEach(function (f) {
+              const sid = f.properties.id;
+              if (priceMap[sid] && priceMap[sid][fuelType] !== undefined) {
+                const cents = priceMap[sid][fuelType];
+                if (cents >= minCents && cents <= maxCents) {
+                  matchedIds.push(sid);
+                }
+              }
+            });
+          }
+
+          if (matchedIds.length === 0) {
+            showToast('No stations found in that range');
+            clearFilter();
+          } else {
+            map.setFilter('station-pins-match', ['in', ['get', 'id'], ['literal', matchedIds]]);
+            priceFilterActive = true;
+            clearBtn.classList.add('visible');
+            const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
+            showToast(matchedIds.length + ' station' + (matchedIds.length === 1 ? '' : 's') +
+              ' match ' + (fuelLabel[fuelType] || fuelType) +
+              ' $' + minVal.toFixed(2) + '–$' + maxVal.toFixed(2));
+          }
+        } catch (e) {
+          console.error('Price filter error:', e);
+          showToast('Could not load prices. Try again.');
+        } finally {
+          applyBtn.disabled = false;
+          applyBtn.textContent = 'Apply';
+        }
+      });
+    }
+
+    // ── BOOT ──────────────────────────────────────────────────────────
+    function boot() {
+      initFirebase();
+      initMap();
+      setupDragToDismiss();
+      setupForms();
+      setupSearch();
+      setupPriceFilter();
+      checkAdmin();
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+
+  })();
+  </script>
+</body>
+</html>

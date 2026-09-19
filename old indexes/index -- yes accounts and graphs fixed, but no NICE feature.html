@@ -44,7 +44,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <style>
     /* ── RESET & TOKENS ─────────────────────────────────────────── */
@@ -92,7 +91,7 @@
 
     /* Override MapLibre control positions for safe areas */
     .maplibregl-ctrl-top-right {
-      top: calc(var(--safe-top) + 108px) !important;
+      top: calc(var(--safe-top) + 60px) !important;
       right: calc(var(--safe-right) + 10px) !important;
     }
     .maplibregl-ctrl-bottom-right {
@@ -118,80 +117,32 @@
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: var(--bg);
+      background: rgba(255,255,255,0.92);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 18px;
-      transition: opacity 0.5s ease;
+      gap: 16px;
+      transition: opacity 0.4s ease;
     }
     #loading-overlay.hidden {
       opacity: 0;
       pointer-events: none;
+      display: none;
     }
-    #loading-donut-wrap {
-      position: relative;
-      width: 150px;
-      height: 150px;
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
-    #loading-donut-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      transform: rotate(-90deg);
-    }
-    #donut-track {
-      fill: none;
-      stroke: var(--border);
-      stroke-width: 7;
-    }
-    #donut-fill {
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 7;
-      stroke-linecap: round;
-      stroke-dasharray: 289;
-      stroke-dashoffset: 289;
-      transition: stroke-dashoffset 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    #loading-donut-emojis {
-      position: absolute;
-      inset: 0;
-      animation: donut-spin 9s linear infinite;
-    }
-    .donut-emoji {
-      position: absolute;
-      font-size: 20px;
-      top: calc(50% - 12px);
-      left: calc(50% - 12px);
-      line-height: 1;
-    }
-    .donut-emoji:nth-child(1) { transform: rotate(0deg)   translateX(63px) rotate(0deg); }
-    .donut-emoji:nth-child(2) { transform: rotate(60deg)  translateX(63px) rotate(-60deg); }
-    .donut-emoji:nth-child(3) { transform: rotate(120deg) translateX(63px) rotate(-120deg); }
-    .donut-emoji:nth-child(4) { transform: rotate(180deg) translateX(63px) rotate(-180deg); }
-    .donut-emoji:nth-child(5) { transform: rotate(240deg) translateX(63px) rotate(-240deg); }
-    .donut-emoji:nth-child(6) { transform: rotate(300deg) translateX(63px) rotate(-300deg); }
-    @keyframes donut-spin { to { transform: rotate(360deg); } }
-    #loading-center-emoji {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 34px;
-      line-height: 1;
-      animation: center-pulse 2.2s ease-in-out infinite;
-    }
-    @keyframes center-pulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50%       { transform: translate(-50%, -50%) scale(1.12); }
-    }
-    #loading-text {
-      font-size: 13px;
-      color: var(--text3);
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-overlay p {
+      font-size: 15px;
+      color: var(--text2);
       font-weight: 500;
-      letter-spacing: 0.2px;
-      transition: opacity 0.2s;
     }
 
     /* ── TOAST ───────────────────────────────────────────────────── */
@@ -217,177 +168,6 @@
     #toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
-    }
-
-    /* ── NICE BURST ─────────────────────────────────────────────── */
-    #nice-burst {
-      position: fixed;
-      top: 42%;
-      left: 50%;
-      transform: translateX(-50%) translateY(0) scale(1);
-      z-index: 20000;
-      pointer-events: none;
-      font-size: 42px;
-      font-weight: 900;
-      color: #111;
-      text-shadow:
-        0px  3px 0 #fff,  0px -3px 0 #fff,
-        3px  0px 0 #fff, -3px  0px 0 #fff,
-        2px  2px 0 #fff, -2px  2px 0 #fff,
-        2px -2px 0 #fff, -2px -2px 0 #fff,
-        3px  1px 0 #fff, -3px  1px 0 #fff,
-        3px -1px 0 #fff, -3px -1px 0 #fff,
-        1px  3px 0 #fff, -1px  3px 0 #fff,
-        1px -3px 0 #fff, -1px -3px 0 #fff,
-        0 0 18px rgba(211,47,47,0.95),
-        0 0 35px rgba(211,47,47,0.7),
-        0 0 60px rgba(211,47,47,0.4);
-      opacity: 0;
-    }
-    @keyframes nicePop {
-      0%   { opacity: 0;   transform: translateX(-50%) translateY(0px)   scale(0.6); }
-      12%  { opacity: 1;   transform: translateX(-50%) translateY(-8px)  scale(1.08); }
-      25%  { opacity: 1;   transform: translateX(-50%) translateY(-14px) scale(1); }
-      75%  { opacity: 1;   transform: translateX(-50%) translateY(-18px) scale(1); }
-      100% { opacity: 0;   transform: translateX(-50%) translateY(-72px) scale(0.92); }
-    }
-    #nice-burst.pop { animation: nicePop 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    #nice-burst.sad {
-      font-size: 26px;
-      color: #111;
-      text-shadow:
-        0px  3px 0 #fff,  0px -3px 0 #fff,
-        3px  0px 0 #fff, -3px  0px 0 #fff,
-        2px  2px 0 #fff, -2px  2px 0 #fff,
-        2px -2px 0 #fff, -2px -2px 0 #fff,
-        3px  1px 0 #fff, -3px  1px 0 #fff,
-        3px -1px 0 #fff, -3px -1px 0 #fff,
-        1px  3px 0 #fff, -1px  3px 0 #fff,
-        1px -3px 0 #fff, -1px -3px 0 #fff,
-        0 0 18px rgba(211,47,47,0.95),
-        0 0 35px rgba(211,47,47,0.7),
-        0 0 60px rgba(211,47,47,0.4);
-    }
-    #nice-burst.sad.pop { animation: nicePop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-
-    /* ── EMOJI PICKER ───────────────────────────────────────────── */
-    #emoji-picker-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 35000;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    #emoji-picker-modal.open { display: flex; }
-    #emoji-picker-card {
-      background: var(--bg);
-      border-radius: 22px 22px 0 0;
-      width: 100%;
-      max-width: 480px;
-      max-height: 72vh;
-      overflow-y: auto;
-      padding-bottom: env(safe-area-inset-bottom);
-      animation: slideUpSheet 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    @keyframes slideUpSheet {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
-    #emoji-picker-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    #emoji-picker-title {
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text1);
-    }
-    #emoji-picker-close {
-      background: none;
-      border: none;
-      font-size: 22px;
-      color: var(--text3);
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-    #emoji-grid {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 2px;
-      padding: 14px 16px 20px;
-    }
-    .emoji-opt {
-      font-size: 28px;
-      text-align: center;
-      padding: 7px 2px;
-      border-radius: 10px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      transition: background 0.12s;
-      line-height: 1.2;
-    }
-    .emoji-opt:active { background: var(--surface); }
-    .emoji-opt.selected { background: var(--surface); outline: 2px solid var(--accent); outline-offset: -2px; }
-    #color-swatches-section {
-      padding: 8px 16px 20px;
-      border-top: 1px solid var(--border);
-    }
-    #color-swatches-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-    #color-swatches-row {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 8px;
-    }
-    #color-reset-btn {
-      background: none;
-      border: none;
-      font-size: 11px;
-      color: var(--text3);
-      cursor: pointer;
-      padding: 6px 0 0;
-      text-decoration: underline;
-    }
-    #emoji-reset-btn {
-      display: block;
-      width: 100%;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 13px;
-      color: var(--text2);
-      cursor: pointer;
-      padding: 8px;
-      margin: 10px 0 4px;
-      text-align: center;
-    }
-    #emoji-reset-btn:active { background: var(--surface); }
-    .color-swatch {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2.5px solid transparent;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: transform 0.12s, border-color 0.12s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .color-swatch:active { transform: scale(0.88); }
-    .color-swatch.selected {
-      border-color: var(--text);
-      transform: scale(1.18);
     }
 
     /* ── BOTTOM SHEET ────────────────────────────────────────────── */
@@ -465,9 +245,11 @@
       margin-top: 3px;
     }
     #sheet-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
       width: 30px;
       height: 30px;
-      flex-shrink: 0;
       border-radius: 50%;
       border: none;
       background: var(--surface2);
@@ -480,22 +262,6 @@
       justify-content: center;
     }
     #sheet-close:active { background: var(--border); }
-    .panel-close-btn {
-      width: 30px;
-      height: 30px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      border: none;
-      background: var(--surface2);
-      color: var(--text2);
-      font-size: 18px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .panel-close-btn:active { background: var(--border); }
 
     /* Sheet scrollable body */
     #sheet-body {
@@ -626,9 +392,6 @@
     .price-card.age-old    { border-color: var(--border); }
     .price-card.age-old    .fuel-price { color: var(--text3); }
     .price-card.stale .fuel-label::after { content: ' · old'; color: var(--text3); }
-    .price-card.verified { border-color: #4caf50 !important; background: #f1f8e9 !important; }
-    .price-card.verified .fuel-price { color: #2e7d32 !important; }
-    .price-card.verified .fuel-age   { color: #388e3c !important; }
 
     /* ── REPORT FORM ─────────────────────────────────────────────── */
     #report-form {
@@ -728,19 +491,6 @@
       gap: 12px;
       margin-bottom: 6px;
     }
-    .load-more-btn {
-      width: 100%;
-      padding: 10px;
-      background: none;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 2px;
-    }
-    .load-more-btn:active { opacity: 0.6; }
 
     .no-data-msg {
       font-size: 13px;
@@ -775,29 +525,6 @@
       color: var(--text);
       word-break: break-word;
       margin-bottom: 8px;
-    }
-
-    .report-author-row {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 8px;
-    }
-    .report-author-avatar {
-      width: 26px !important;
-      height: 26px !important;
-      font-size: 13px !important;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .report-author-name {
-      font-size: 13px;
-      font-weight: 700;
-      flex: 1;
-    }
-    .report-author-time {
-      font-size: 11px;
-      color: var(--text3);
     }
 
     .report-meta {
@@ -886,32 +613,6 @@
       border-left: 2px solid var(--border);
     }
 
-    .reply-author-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 5px;
-    }
-    .reply-author-name {
-      font-size: 12px;
-      font-weight: 700;
-      flex: 1;
-    }
-    .reply-author-time {
-      font-size: 11px;
-      color: var(--text3);
-    }
-    .reply-user-delete {
-      background: none;
-      border: none;
-      font-size: 12px;
-      color: var(--text3);
-      cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 5px;
-    }
-    .reply-user-delete:hover { color: #d32f2f; }
-
     .reply-text {
       font-size: 13px;
       line-height: 1.5;
@@ -939,15 +640,14 @@
         --border: #333333;
       }
       html, body { background: #111111; }
-      #loading-overlay { background: #1a1a1a; }
+      #loading-overlay { background: rgba(18,18,18,0.94); }
       .maplibregl-ctrl-group { filter: invert(1) hue-rotate(180deg); }
     }
 
     /* ── REDUCED MOTION ──────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       #bottom-sheet, #sheet-backdrop, #toast, #loading-overlay { transition: none; }
-      #loading-donut-emojis, #loading-center-emoji { animation: none; }
-      #donut-fill { transition: none; }
+      .spinner { animation: none; border-top-color: var(--accent); }
     }
 
     /* ── AUTH MODAL ──────────────────────────────────────────────── */
@@ -1233,35 +933,6 @@
     .history-row-meta {
       font-size: 11px;
       color: var(--text3);
-    }
-    #my-posts-list {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .my-post-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      gap: 8px;
-    }
-    .my-post-row:last-child { border-bottom: none; }
-    .my-post-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .my-post-comment {
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 1px;
-    }
-    .my-post-date {
-      font-size: 11px;
-      color: var(--text3);
-      flex-shrink: 0;
     }
 
     /* Bottom-left map buttons */
@@ -1601,17 +1272,6 @@
       margin-left: 4px;
     }
     .report-admin-delete:hover { color: #d32f2f; }
-    .report-user-delete {
-      background: none;
-      border: none;
-      font-size: 13px;
-      color: var(--text3);
-      cursor: pointer;
-      padding: 2px 5px;
-      border-radius: 6px;
-      margin-left: auto;
-    }
-    .report-user-delete:hover { color: #d32f2f; }
     .admin-row-station {
       font-size: 12px;
       font-weight: 700;
@@ -1698,24 +1358,6 @@
     }
 
     /* ── SEARCH WIDGET ───────────────────────────────────────────── */
-    #price-view-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: var(--bg);
-      border: none;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: var(--text2);
-      transition: background 0.18s, color 0.18s;
-      flex-shrink: 0;
-    }
-    #price-view-btn.active { background: #1565c0; color: #fff; }
-    #price-view-btn:active { opacity: 0.75; }
-
     #search-widget {
       position: fixed;
       top: calc(var(--safe-top) + 10px);
@@ -1743,7 +1385,7 @@
     }
     #search-toggle:active { background: var(--surface); }
 
-    #search-bar, #search-bar-users {
+    #search-bar {
       display: none;
       align-items: center;
       background: var(--bg);
@@ -1752,9 +1394,9 @@
       overflow: hidden;
       width: 272px;
     }
-    #search-bar.open, #search-bar-users.open { display: flex; }
+    #search-bar.open { display: flex; }
 
-    #search-input, #search-input-users {
+    #search-input {
       flex: 1;
       border: none;
       outline: none;
@@ -1766,12 +1408,11 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    #search-input::placeholder,
-    #search-input-users::placeholder { color: var(--text3); }
-    #search-input::-webkit-search-cancel-button,
-    #search-input-users::-webkit-search-cancel-button { display: none; }
+    #search-input::placeholder { color: var(--text3); }
+    /* Remove native clear button on webkit */
+    #search-input::-webkit-search-cancel-button { display: none; }
 
-    #search-clear, #search-clear-users {
+    #search-clear {
       background: none;
       border: none;
       font-size: 20px;
@@ -1780,9 +1421,9 @@
       cursor: pointer;
       line-height: 1;
     }
-    #search-clear:active, #search-clear-users:active { color: var(--text); }
+    #search-clear:active { color: var(--text); }
 
-    #search-results, #search-results-users {
+    #search-results {
       display: none;
       background: var(--bg);
       border-radius: 12px;
@@ -1792,7 +1433,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
-    #search-results.open, #search-results-users.open { display: block; }
+    #search-results.open { display: block; }
 
     .search-group-label {
       font-size: 10px;
@@ -1848,9 +1489,7 @@
     @media (prefers-color-scheme: dark) {
       #search-toggle,
       #search-bar,
-      #search-bar-users,
       #search-results,
-      #search-results-users,
       #filter-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
     }
 
@@ -1972,312 +1611,6 @@
 
     /* Green match dot label on map */
     /* (layer rendered by MapLibre, no extra CSS needed) */
-    /* ── AVATAR CIRCLES ─────────────────────────────────────────── */
-    .avatar-circle {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: #fff;
-      flex-shrink: 0;
-      overflow: hidden;
-      vertical-align: middle;
-    }
-    .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
-    .avatar-circle-large {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 700;
-      color: #fff;
-      flex-shrink: 0;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-    }
-    .avatar-circle-large img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .avatar-upload-hint {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .avatar-circle-large:hover .avatar-upload-hint { opacity: 1; }
-
-    /* ── USERNAME LINK ───────────────────────────────────────────── */
-    .username-link {
-      cursor: pointer;
-      font-weight: 700;
-      color: var(--accent);
-    }
-    .username-link:hover { text-decoration: underline; }
-
-    /* ── USER PROFILE PANEL ──────────────────────────────────────── */
-    #user-profile-panel {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      transform: translateX(-50%) translateY(102%);
-      border-radius: 22px 22px 0 0;
-      box-shadow: 0 -6px 40px rgba(0,0,0,0.18);
-      background: var(--bg);
-      z-index: 10003;
-      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    #user-profile-panel.open { transform: translateX(-50%) translateY(0); }
-    #user-profile-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    #user-profile-info { display: flex; align-items: center; gap: 14px; }
-    #user-profile-name { font-weight: 700; font-size: 18px; color: var(--text1); }
-    #user-profile-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
-    .profile-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 20px;
-    }
-    .profile-badge-gold   { background: #fff8e1; color: #f9a825; border: 1px solid #ffe082; }
-    .profile-badge-silver { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
-    .profile-badge-bronze { background: #fbe9e7; color: #8d6e63; border: 1px solid #ffccbc; }
-    .profile-badge-hunter  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-    .profile-badge-pioneer { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
-    .profile-badge-streak  { background: #fff3e0; color: #e64a19; border: 1px solid #ffcc80; }
-
-    .thanks-btn {
-      background: none; border: none; font-family: var(--font);
-      font-size: 12px; font-weight: 600; color: var(--text2);
-      cursor: pointer; padding: 4px 8px; border-radius: 8px;
-    }
-    .thanks-btn:active { background: var(--surface2); }
-    .thanks-btn.thanked { color: #2e7d32; }
-    .thanks-btn:disabled { opacity: 0.65; cursor: default; }
-
-    /* Brand filter — mirrors price filter styling */
-    #brand-filter-section { border-top: 1px solid var(--border); }
-    #brand-filter-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-    }
-    #brand-filter-toggle {
-      background: none; border: none; font-family: var(--font);
-      font-size: 13px; font-weight: 700; color: var(--accent);
-      cursor: pointer; padding: 0;
-    }
-    #brand-filter-toggle:active { opacity: 0.7; }
-    #brand-clear-btn {
-      display: none; background: none; border: none;
-      font-family: var(--font); font-size: 12px; font-weight: 600;
-      color: var(--text3); cursor: pointer; padding: 0;
-    }
-    #brand-clear-btn.visible { display: block; }
-    #brand-clear-btn:active { color: var(--accent); }
-    #brand-filter-controls {
-      display: none; flex-direction: column; gap: 8px;
-      padding: 10px 14px 14px; border-top: 1px solid var(--border);
-    }
-    #brand-filter-controls.open { display: flex; }
-    #brand-select {
-      width: 100%; font-family: var(--font); font-size: 15px;
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 10px; padding: 8px 10px; color: var(--text);
-    }
-    #brand-max-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
-    #brand-max-price {
-      width: 80px; padding: 7px 10px; border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 14px; font-family: var(--font);
-      background: var(--surface); color: var(--text);
-    }
-    #brand-apply {
-      padding: 9px; background: var(--accent); color: #fff;
-      border: none; border-radius: 10px; font-family: var(--font);
-      font-size: 14px; font-weight: 600; cursor: pointer;
-    }
-
-    /* Trip cost calculator */
-    #trip-cost-section { border-top: 1px solid var(--border); }
-    #trip-cost-toggle-row {
-      display: flex; align-items: center; padding: 10px 14px;
-    }
-    #trip-cost-toggle-btn {
-      background: none; border: none; font-family: var(--font);
-      font-size: 13px; font-weight: 700; color: var(--accent);
-      cursor: pointer; padding: 0; text-align: left;
-    }
-    #trip-cost-controls {
-      display: none; flex-direction: column; gap: 10px;
-      padding: 0 14px 14px;
-    }
-    #trip-cost-controls.open { display: flex; }
-    .trip-label {
-      font-size: 11px; font-weight: 700; color: var(--text3);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      display: block; margin-bottom: 4px;
-    }
-    .trip-field { display: flex; flex-direction: column; }
-    .trip-loc-row { display: flex; gap: 6px; align-items: stretch; }
-    .trip-loc-row input { flex: 1; }
-    #trip-from-gps {
-      background: var(--surface2); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 0 9px; cursor: pointer; font-size: 15px;
-      color: var(--text); flex-shrink: 0;
-    }
-    .trip-inline-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    #trip-cost-controls input[type="text"],
-    #trip-cost-controls input[type="number"] {
-      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 8px 10px; font-size: 14px;
-      font-family: var(--font); color: var(--text); box-sizing: border-box;
-    }
-    #trip-calc-btn {
-      background: var(--accent); color: #fff; border: none;
-      border-radius: 10px; padding: 10px; font-family: var(--font);
-      font-size: 14px; font-weight: 700; cursor: pointer;
-    }
-    #trip-calc-btn:active { opacity: 0.85; }
-    #trip-calc-btn:disabled { opacity: 0.6; cursor: default; }
-    #trip-result {
-      background: var(--surface2); border-radius: 10px; padding: 12px 14px;
-      display: none; text-align: center;
-    }
-    #trip-result.visible { display: block; }
-    .trip-result-cost {
-      font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 6px;
-    }
-    .trip-result-detail {
-      font-size: 12px; color: var(--text3); line-height: 1.8;
-    }
-
-    /* Price alert */
-    #price-alert-section { border-top: 1px solid var(--border); padding: 14px 16px; display: none; }
-    #price-alert-section.visible { display: block; }
-    #price-alert-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text2); margin-bottom: 10px; }
-    #price-alert-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    #alert-fuel-select, #alert-max-price { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font); font-size: 13px; color: var(--text); }
-    #alert-max-price { width: 80px; }
-    #alert-save-btn { padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
-    #alert-notify-btn { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: none; font-family: var(--font); font-size: 12px; color: var(--text2); cursor: pointer; }
-    #alert-status { font-size: 12px; color: var(--text3); margin-top: 6px; }
-    #user-profile-feed {
-      overflow-y: auto;
-      flex: 1;
-      padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .user-report-row {
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .user-report-row:active { background: var(--surface); }
-    .user-report-station-name { font-weight: 600; font-size: 13px; color: var(--text1); }
-    .user-report-addr { font-size: 12px; color: var(--text3); }
-    .user-report-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
-
-    /* ── IOS INSTALL BANNER ─────────────────────────────────────── */
-    #install-banner {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 19999;
-      background: var(--bg);
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
-      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      animation: bannerSlideUp 0.4s cubic-bezier(0.32,0.72,0,1) forwards;
-    }
-    #install-banner.visible { display: flex; }
-    @keyframes bannerSlideUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
-    #install-banner-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    #install-banner-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text1);
-    }
-    #install-banner-title img {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-    }
-    #install-banner-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: var(--text3);
-      cursor: pointer;
-      padding: 4px 8px;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-    #install-banner-steps {
-      font-size: 13px;
-      color: var(--text2);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    #install-banner-steps svg {
-      flex-shrink: 0;
-      color: #007aff;
-    }
-    #install-banner::after {
-      content: '';
-      position: absolute;
-      bottom: calc(-8px + env(safe-area-inset-bottom));
-      left: 50%;
-      transform: translateX(-50%);
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 8px solid var(--border);
-    }
   </style>
 </head>
 <body>
@@ -2311,12 +1644,9 @@
   <div id="history-panel" role="dialog" aria-modal="true">
     <div class="panel-handle"></div>
     <div id="history-header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="history-avatar" class="avatar-circle" style="width:40px;height:40px;font-size:20px;flex-shrink:0"></div>
-        <div>
-          <h2 id="history-title">My Fills</h2>
-          <div class="history-subtitle" id="history-subtitle"></div>
-        </div>
+      <div>
+        <h2 id="history-title">My Reports</h2>
+        <div class="history-subtitle" id="history-subtitle"></div>
       </div>
       <div id="history-header-actions">
         <button id="signout-btn">Sign out</button>
@@ -2367,7 +1697,6 @@
     <div id="leaderboard-tabs">
       <button class="lb-tab active" data-tab="contributors">Top Contributors</button>
       <button class="lb-tab" data-tab="hunters">Price Hunters</button>
-      <button class="lb-tab" data-tab="best-prices">Best Prices</button>
     </div>
     <div id="leaderboard-feed"></div>
   </div>
@@ -2376,7 +1705,7 @@
   <div id="admin-user-panel" role="dialog" aria-modal="true">
     <div id="admin-user-header">
       <div>
-        <h2 id="admin-user-title">User Fills</h2>
+        <h2 id="admin-user-title">User Reports</h2>
         <div class="admin-user-subtitle" id="admin-user-subtitle"></div>
       </div>
       <button id="admin-user-close" aria-label="Close">×</button>
@@ -2398,100 +1727,15 @@
 
   <!-- Loading overlay -->
   <div id="loading-overlay">
-    <div id="loading-donut-wrap">
-      <svg id="loading-donut-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-        <circle id="donut-track" cx="60" cy="60" r="46"/>
-        <circle id="donut-fill"  cx="60" cy="60" r="46"/>
-      </svg>
-      <div id="loading-donut-emojis">
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💰</span>
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💵</span>
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💲</span>
-      </div>
-      <div id="loading-center-emoji">🤑</div>
-    </div>
-    <p id="loading-text">Starting up…</p>
+    <div class="spinner"></div>
+    <p id="loading-text">Finding gas stations…</p>
   </div>
 
   <!-- Toast notification -->
   <div id="toast"></div>
-  <div id="nice-burst"></div>
-
-  <div id="emoji-picker-modal">
-    <div id="emoji-picker-card">
-      <div id="emoji-picker-header">
-        <span id="emoji-picker-title">Choose your avatar</span>
-        <button id="emoji-picker-close">×</button>
-      </div>
-      <div id="emoji-grid"></div>
-      <button id="emoji-reset-btn">Remove emoji &amp; use initials</button>
-      <div id="color-swatches-section">
-        <div id="color-swatches-label">Background color</div>
-        <div id="color-swatches-row"></div>
-        <button id="color-reset-btn">Reset to default</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- User profile panel -->
-  <div id="user-profile-panel">
-    <div id="user-profile-panel-header">
-      <div id="user-profile-info">
-        <div id="user-profile-avatar-large" class="avatar-circle-large">
-          <div class="avatar-upload-hint" id="avatar-upload-hint" style="display:none">✏️</div>
-        </div>
-        <div>
-          <div id="user-profile-name"></div>
-          <div id="user-profile-meta"></div>
-          <div id="user-profile-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px"></div>
-        </div>
-      </div>
-      <button class="panel-close-btn" id="user-profile-close" aria-label="Close">×</button>
-    </div>
-    <div id="price-alert-section">
-      <div id="price-alert-title">🔔 Price Alert</div>
-      <div id="price-alert-row">
-        <select id="alert-fuel-select">
-          <option value="regular">Regular</option>
-          <option value="mid">Mid-Grade</option>
-          <option value="premium">Premium</option>
-          <option value="diesel">Diesel</option>
-        </select>
-        <span>under $</span>
-        <input id="alert-max-price" type="number" placeholder="5.50" step="0.10" min="1" max="9.99" inputmode="decimal" />
-        <button id="alert-save-btn">Save</button>
-      </div>
-      <div id="alert-status"></div>
-      <button id="alert-notify-btn">Enable notifications</button>
-    </div>
-    <div id="user-profile-feed"></div>
-  </div>
-
-  <!-- iOS install banner -->
-  <div id="install-banner">
-    <div id="install-banner-top">
-      <div id="install-banner-title">
-        <img src="icon.png" alt="GasIO icon" />
-        Add GasIO to your Home Screen
-      </div>
-      <button id="install-banner-close" aria-label="Dismiss">×</button>
-    </div>
-    <div id="install-banner-steps">
-      Tap
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-        <polyline points="16 6 12 2 8 6"/>
-        <line x1="12" y1="2" x2="12" y2="15"/>
-      </svg>
-      in Safari, then tap <strong>"Add to Home Screen"</strong>
-    </div>
-  </div>
 
   <!-- Profile / history button -->
-  <button id="profile-btn" aria-label="My fills">
+  <button id="profile-btn" aria-label="My reports">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -2524,22 +1768,11 @@
         <line x1="11.7" y1="11.7" x2="16" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </button>
-    <button id="price-view-btn" aria-label="Toggle price view" title="Show gas prices">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 12C1 12 5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-      </svg>
-    </button>
     <div id="search-bar">
       <input id="search-input" type="search" placeholder="Search stations or address…" autocomplete="off" />
       <button id="search-clear" aria-label="Clear">×</button>
     </div>
     <div id="search-results"></div>
-    <div id="search-bar-users">
-      <input id="search-input-users" type="search" placeholder="Search users…" autocomplete="off" />
-      <button id="search-clear-users" aria-label="Clear users">×</button>
-    </div>
-    <div id="search-results-users"></div>
     <div id="filter-panel">
       <div id="filter-toggle-row">
         <button id="filter-toggle-btn">Filter by price</button>
@@ -2560,50 +1793,6 @@
           <input id="filter-max" type="number" placeholder="5.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
         </div>
         <button id="filter-apply-btn">Apply</button>
-      </div>
-      <div id="brand-filter-section">
-        <div id="brand-filter-row">
-          <button id="brand-filter-toggle">Filter by brand</button>
-          <button id="brand-clear-btn">× Clear</button>
-        </div>
-        <div id="brand-filter-controls">
-          <select id="brand-select"><option value="">Select brand…</option></select>
-          <div id="brand-max-row">
-            <span>Max price (optional):</span>
-            <span>$</span><input id="brand-max-price" type="number" placeholder="6.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
-          </div>
-          <button id="brand-apply">Show on map</button>
-        </div>
-      </div>
-      <div id="trip-cost-section">
-        <div id="trip-cost-toggle-row">
-          <button id="trip-cost-toggle-btn">🚗 How much $ will this trip cost?</button>
-        </div>
-        <div id="trip-cost-controls">
-          <div class="trip-field">
-            <label class="trip-label">From</label>
-            <div class="trip-loc-row">
-              <input id="trip-from" type="text" placeholder="Departure address…" autocomplete="off" />
-              <button id="trip-from-gps" title="Use my location">📍</button>
-            </div>
-          </div>
-          <div class="trip-field">
-            <label class="trip-label">To</label>
-            <input id="trip-to" type="text" placeholder="Destination address…" autocomplete="off" />
-          </div>
-          <div class="trip-inline-row">
-            <div class="trip-field">
-              <label class="trip-label">MPG</label>
-              <input id="trip-mpg" type="number" placeholder="28" min="1" max="300" inputmode="decimal" />
-            </div>
-            <div class="trip-field">
-              <label class="trip-label">$/gal</label>
-              <input id="trip-price" type="number" placeholder="4.50" step="0.01" min="0.01" inputmode="decimal" />
-            </div>
-          </div>
-          <button id="trip-calc-btn">Tell me! ⛽</button>
-          <div id="trip-result"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -2640,22 +1829,22 @@
         <div class="price-card" id="card-regular">
           <div class="fuel-label">Regular</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-mid">
           <div class="fuel-label">Mid-Grade</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-premium">
           <div class="fuel-label">Premium</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-diesel">
           <div class="fuel-label">Diesel</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
       </div>
 
@@ -2667,7 +1856,7 @@
       </div>
 
       <!-- Reports feed -->
-      <p class="section-title">Fills</p>
+      <p class="section-title">Reports</p>
       <div id="reports-list"></div>
 
       <!-- My posts at this station -->
@@ -2677,7 +1866,7 @@
       </div>
 
       <!-- Unified post form -->
-      <p class="section-title">Post a Fill</p>
+      <p class="section-title">Post a Report</p>
       <form id="post-form" novalidate>
         <!-- Honeypot -->
         <input class="hp-field" name="website" type="text" tabindex="-1" autocomplete="off" />
@@ -2700,7 +1889,7 @@
                   maxlength="280" rows="3"></textarea>
         <p id="post-char-count">280</p>
 
-        <button type="submit" class="btn-primary" id="post-submit">Post Fill</button>
+        <button type="submit" class="btn-primary" id="post-submit">Post Report</button>
       </form>
 
     </div><!-- end #sheet-body -->
@@ -2748,21 +1937,14 @@
 out center tags;`.trim();
 
     // ── STATE ────────────────────────────────────────────────────────
-    let map, db, storage;
+    let map, db;
     let currentStationId = null;
     let sheetOpen = false;
     let stationsGeoJSON = null;
     let priceFilterActive = false;
-    let priceViewMode = false;
-    let priceViewFetched = false;
     let currentUsername = null;   // set after login
     let currentDeviceId = null;   // Firebase Auth uid
     let isAdmin = false;          // set from Firestore is_admin field
-    let currentPrices = {};       // most recent price_cents per fuel type for open station
-    let stationReports = [];      // full fetched report list for current station
-    let stationReplies = [];      // corresponding replies
-    let visibleCount  = 3;        // how many reports are currently shown
-    let currentProfileUser = null; // username whose profile panel is open
 
     // ── FIREBASE INIT ────────────────────────────────────────────────
     function initFirebase() {
@@ -2773,7 +1955,6 @@ out center tags;`.trim();
       try {
         firebase.initializeApp(FIREBASE_CONFIG);
         db = firebase.firestore();
-        storage = firebase.storage();
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         return true;
       } catch (e) {
@@ -2880,16 +2061,8 @@ out center tags;`.trim();
                   .where('uid', '==', user.uid).limit(1).get();
                 if (!snap.empty) {
                   currentUsername = snap.docs[0].id;
-                  const udata = snap.docs[0].data();
-                  isAdmin = udata.is_admin === true;
+                  isAdmin = snap.docs[0].data().is_admin === true;
                   if (isAdmin) revealAdminButton();
-                  if (udata.avatar_emoji || udata.avatar_color) {
-                    avatarCache[currentUsername] = {
-                      emoji: udata.avatar_emoji || null,
-                      color: udata.avatar_color || null
-                    };
-                    updateProfileBtn();
-                  }
                 }
               } catch (e) { /* non-fatal */ }
             }
@@ -2950,7 +2123,7 @@ out center tags;`.trim();
             ...(hintVal ? { password_hint: hintVal } : {})
           });
 
-          currentUsername = val.toLowerCase();
+          currentUsername = val;
           currentDeviceId = uid;
           modal.classList.remove('open');
           showToast('Welcome, ' + val + '!');
@@ -2990,7 +2163,7 @@ out center tags;`.trim();
           const cred = await firebase.auth().signInWithEmailAndPassword(
             val.toLowerCase() + '@gasapp.local', pass
           );
-          currentUsername = val.toLowerCase();
+          currentUsername = val;
           currentDeviceId = cred.user.uid;
           modal.classList.remove('open');
         } catch (e) {
@@ -3068,7 +2241,7 @@ out center tags;`.trim();
         geolocate.trigger();
       });
 
-      map.on('load', function () { setLoadingProgress(45, 'Map ready…'); onMapLoad(); });
+      map.on('load', onMapLoad);
       map.on('error', function (e) {
         console.error('Map error:', e);
         // Tile errors are non-fatal; only hide loading if map itself failed to init
@@ -3118,13 +2291,11 @@ out center tags;`.trim();
       // Request GPS
       requestGPS();
 
-      setLoadingProgress(60, 'Finding gas stations…');
+      setLoadingText('Finding gas stations…');
       try {
         const geojson = await loadStations();
         stationsGeoJSON = geojson;
-        setLoadingProgress(90, 'Placing pins…');
         addStationsToMap(geojson);
-        document.dispatchEvent(new Event('stationsLoaded'));
       } catch (e) {
         console.error('Failed to load stations:', e);
         showToast('Could not load stations. Try refreshing.');
@@ -3174,7 +2345,7 @@ out center tags;`.trim();
 
       // Fetch from Overpass
       try {
-        setLoadingProgress(70, 'Fetching station data…');
+        setLoadingText('Loading gas stations…');
         const geojson = await fetchFromOverpass();
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data: geojson, timestamp: Date.now() }));
@@ -3186,7 +2357,7 @@ out center tags;`.trim();
       }
 
       // Fallback to static file
-      setLoadingProgress(70, 'Loading stations…');
+      setLoadingText('Loading stations…');
       const res = await fetch('./stations.geojson');
       if (!res.ok) throw new Error('Static fallback not found');
       const geojson = await res.json();
@@ -3258,11 +2429,7 @@ out center tags;`.trim();
         data: geojson,
         cluster: true,
         clusterMaxZoom: 13,
-        clusterRadius: 45,
-        clusterProperties: {
-          'price_sum':   [['+', ['accumulated'], ['get', 'price_sum']],   ['coalesce', ['get', 'regular_price_cents'], 0]],
-          'price_count': [['+', ['accumulated'], ['get', 'price_count']], ['case', ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0], 1, 0]]
-        }
+        clusterRadius: 45
       });
 
       // Cluster circles
@@ -3361,93 +2528,11 @@ out center tags;`.trim();
         }
       });
 
-      // ── PRICE VIEW LAYERS (hidden until toggled) ──────────────────
-      // Blue cluster circles
-      map.addLayer({
-        id: 'clusters-price',
-        type: 'circle',
-        source: 'stations',
-        filter: ['has', 'point_count'],
-        layout: { visibility: 'none' },
-        paint: {
-          'circle-color': '#1565c0',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-          'circle-radius': 28
-        }
-      });
-
-      // Blue cluster avg-price labels
-      map.addLayer({
-        id: 'cluster-price-label',
-        type: 'symbol',
-        source: 'stations',
-        filter: ['has', 'point_count'],
-        layout: {
-          visibility: 'none',
-          'text-font': ['Noto Sans Bold'],
-          'text-size': 11,
-          'text-field': ['case',
-            ['>', ['get', 'price_count'], 0],
-            ['concat', '$',
-              ['to-string', ['floor', ['/', ['/', ['get', 'price_sum'], ['get', 'price_count']], 100]]],
-              '.',
-              ['to-string', ['floor', ['/', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 100], 10]]],
-              ['to-string', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 10]]
-            ],
-            '?'
-          ]
-        },
-        paint: { 'text-color': '#ffffff' }
-      });
-
-      // Blue individual pins (price view)
-      map.addLayer({
-        id: 'station-pins-price',
-        type: 'circle',
-        source: 'stations',
-        filter: ['!', ['has', 'point_count']],
-        layout: { visibility: 'none' },
-        paint: {
-          'circle-radius': 16,
-          'circle-color': ['case', ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0], '#1565c0', '#78909c'],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
-      });
-
-      // Price labels on individual pins
-      map.addLayer({
-        id: 'station-pins-price-label',
-        type: 'symbol',
-        source: 'stations',
-        filter: ['!', ['has', 'point_count']],
-        layout: {
-          visibility: 'none',
-          'text-font': ['Noto Sans Bold'],
-          'text-size': 10,
-          'text-field': ['case',
-            ['>', ['coalesce', ['get', 'regular_price_cents'], 0], 0],
-            ['concat', '$',
-              ['to-string', ['floor', ['/', ['get', 'regular_price_cents'], 100]]],
-              '.',
-              ['to-string', ['floor', ['/', ['%', ['get', 'regular_price_cents'], 100], 10]]],
-              ['to-string', ['%', ['get', 'regular_price_cents'], 10]]
-            ],
-            '?'
-          ]
-        },
-        paint: { 'text-color': '#ffffff' }
-      });
-
       // Cursor style
       map.on('mouseenter', 'station-pins', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'station-pins', () => { map.getCanvas().style.cursor = ''; });
       map.on('mouseenter', 'clusters',     () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'clusters',     () => { map.getCanvas().style.cursor = ''; });
-      map.on('mouseenter', 'station-pins-price', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'station-pins-price', () => { map.getCanvas().style.cursor = ''; });
-      map.on('click', 'station-pins-price', function (e) { openSheet(e.features[0].properties); });
     }
 
     // ── BOTTOM SHEET ──────────────────────────────────────────────────
@@ -3519,7 +2604,7 @@ out center tags;`.trim();
       const card = document.getElementById('card-' + fuelType);
       card.classList.remove('has-data', 'stale');
       card.querySelector('.fuel-price').textContent = '—';
-      card.querySelector('.fuel-age').textContent   = 'No fills';
+      card.querySelector('.fuel-age').textContent   = 'No reports';
     }
 
     // ── DRAG TO DISMISS ───────────────────────────────────────────────
@@ -3572,26 +2657,6 @@ out center tags;`.trim();
     }
 
     // ── FIRESTORE ────────────────────────────────────────────────────
-    function renderReportsBatch(stationId) {
-      const list = document.getElementById('reports-list');
-      list.innerHTML = '';
-      const slice = stationReports.slice(0, visibleCount);
-      slice.forEach(function (r, i) {
-        list.appendChild(buildReportCard(r, stationReplies[i] || [], stationId));
-      });
-      if (visibleCount < stationReports.length) {
-        const remaining = stationReports.length - visibleCount;
-        const btn = document.createElement('button');
-        btn.className = 'load-more-btn';
-        btn.textContent = 'Load ' + Math.min(3, remaining) + ' more report' + (Math.min(3, remaining) === 1 ? '' : 's');
-        btn.addEventListener('click', function () {
-          visibleCount += 3;
-          renderReportsBatch(stationId);
-        });
-        list.appendChild(btn);
-      }
-    }
-
     async function loadStationData(stationId) {
       const list = document.getElementById('reports-list');
       // Reset trend chart immediately so previous station's data doesn't linger
@@ -3625,16 +2690,12 @@ out center tags;`.trim();
             byFuel[d.fuel_type] = d;
           }
         });
-        currentPrices = {};
         ['regular', 'mid', 'premium', 'diesel'].forEach(function (ft) {
-          if (byFuel[ft]) {
-            renderPriceCard(ft, byFuel[ft]);
-            currentPrices[ft] = byFuel[ft].price_cents;
-          }
+          if (byFuel[ft]) renderPriceCard(ft, byFuel[ft]);
         });
 
         if (snap.empty) {
-          list.innerHTML = '<p class="no-data-msg">No fills yet. Be the first!</p>';
+          list.innerHTML = '<p class="no-data-msg">No reports yet. Be the first!</p>';
           return;
         }
 
@@ -3659,23 +2720,16 @@ out center tags;`.trim();
             });
         });
 
-        stationReplies = await Promise.all(replyFetches);
-        stationReports = reports;
-        visibleCount = 3;
-
-        // Pre-fetch avatars for all report authors + reply authors
-        const allReplyUsernames = stationReplies.flat().map(function (r) { return r.username; }).filter(Boolean);
-        const reportUsernames = [...new Set(
-          reports.map(function (r) { return r.username; }).filter(Boolean).concat(allReplyUsernames)
-        )];
-        if (reportUsernames.length) await fetchAvatarBatch(reportUsernames);
-
-        renderReportsBatch(stationId);
+        const allReplies = await Promise.all(replyFetches);
+        list.innerHTML = '';
+        reports.forEach(function (r, i) {
+          list.appendChild(buildReportCard(r, allReplies[i] || [], stationId));
+        });
         renderTrendChart(reports, null);
 
       } catch (e) {
         console.error('Firestore error:', e);
-        list.innerHTML = '<p class="no-data-msg">Could not load fills.</p>';
+        list.innerHTML = '<p class="no-data-msg">Could not load reports.</p>';
       }
     }
 
@@ -3685,7 +2739,7 @@ out center tags;`.trim();
       if (!report) {
         card.classList.remove('age-fresh', 'age-medium', 'age-old', 'stale', 'has-data');
         card.querySelector('.fuel-price').textContent = '—';
-        card.querySelector('.fuel-age').textContent   = 'No fills';
+        card.querySelector('.fuel-age').textContent   = 'No reports';
         return;
       }
       const dollars = (report.price_cents / 100).toFixed(2);
@@ -3716,22 +2770,6 @@ out center tags;`.trim();
 
       let inner = '';
 
-      // Author row — avatar + username + time
-      if (report.username) {
-        const uEmoji = avatarCache[report.username]?.emoji || null;
-        const uColor = avatarCache[report.username]?.color || null;
-        const uAuto  = avatarColor(report.username);
-        const uBg    = uColor || (uEmoji ? uAuto + '55' : uAuto);
-        const uBody  = uEmoji ? escapeHTML(uEmoji) : escapeHTML((report.username[0] || '?').toUpperCase());
-        inner += '<div class="report-author-row">' +
-          '<div class="avatar-circle report-author-avatar" style="background:' + uBg + '" data-username="' + escapeHTML(report.username) + '">' + uBody + '</div>' +
-          '<span class="username-link report-author-name" data-username="' + escapeHTML(report.username) + '">' + escapeHTML(report.username) + '</span>' +
-          '<span class="report-author-time">' + timeAgo(date) + '</span>' +
-          '</div>';
-      } else {
-        inner += '<div class="report-author-row"><span class="report-author-time">' + timeAgo(date) + '</span></div>';
-      }
-
       // Price badge
       if (report.fuel_type && report.price_cents) {
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -3746,21 +2784,21 @@ out center tags;`.trim();
         inner += '<p class="report-comment">' + escapeHTML(report.comment) + '</p>';
       }
 
-      // Actions row
+      // Meta row
       const confirmCount = report.confirm_count || 0;
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const todayKey = currentDeviceId ? currentDeviceId + '_' + todayStr : null;
-      const alreadyConfirmed = !!(todayKey &&
-        (report.confirmed_by || []).includes(todayKey));
+      const alreadyConfirmed = currentDeviceId &&
+        (report.confirmed_by || []).includes(currentDeviceId);
       const alreadyFlagged = currentDeviceId &&
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<button class="thanks-btn' + (alreadyConfirmed ? ' thanked' : '') + '" data-report-id="' + report.id + '"' + (alreadyConfirmed ? ' disabled' : '') + '>' + (alreadyConfirmed ? '✓' : '👍') + (confirmCount ? ' ' + confirmCount : '') + (alreadyConfirmed ? ' Confirmed today' : ' Still accurate') + '</button>' +
+        '<span class="report-time">' + timeAgo(date) + (report.username ? ' · <b>' + escapeHTML(report.username) + '</b>' : '') + '</span>' +
+        '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
+          '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
+        '</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
-        (report.username && report.username === currentUsername ? '<button class="report-user-delete" data-report-id="' + report.id + '" title="Delete my report">🗑</button>' : '') +
         '</div>';
 
       // Replies
@@ -3768,37 +2806,9 @@ out center tags;`.trim();
         inner += '<div class="replies-list">';
         replies.forEach(function (reply) {
           const rDate = reply.created_at?.toDate?.() || new Date();
-          const ru = reply.username || null;
-          const isOwnerByUsername = ru && ru === currentUsername;
-          const isOwnerByDevice   = !ru && reply.device_id && reply.device_id === currentDeviceId;
-          const isOwner = isOwnerByUsername || isOwnerByDevice;
-          const canDelete = isOwner || isAdmin;
-          const displayUser = ru || (isOwnerByDevice ? currentUsername : null);
-          const delBtn = canDelete
-            ? '<button class="reply-user-delete" data-reply-id="' + escapeHTML(reply.id) + '" data-report-id="' + escapeHTML(report.id) + '" title="Delete reply">🗑</button>'
-            : '';
-          let replyAuthor = '';
-          if (displayUser) {
-            const ruEmoji = avatarCache[displayUser]?.emoji || null;
-            const ruColor = avatarCache[displayUser]?.color || null;
-            const ruAuto  = avatarColor(displayUser);
-            const ruBg    = ruColor || (ruEmoji ? ruAuto + '55' : ruAuto);
-            const ruBody  = ruEmoji ? escapeHTML(ruEmoji) : escapeHTML((displayUser[0] || '?').toUpperCase());
-            replyAuthor = '<div class="reply-author-row">' +
-              '<div class="avatar-circle reply-author-avatar" style="width:22px;height:22px;font-size:11px;background:' + ruBg + '" data-username="' + escapeHTML(displayUser) + '">' + ruBody + '</div>' +
-              '<span class="username-link reply-author-name" data-username="' + escapeHTML(displayUser) + '">' + escapeHTML(displayUser) + '</span>' +
-              '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
-              delBtn +
-              '</div>';
-          } else {
-            replyAuthor = '<div class="reply-author-row">' +
-              '<span class="reply-author-time">' + timeAgo(rDate) + '</span>' +
-              delBtn +
-              '</div>';
-          }
-          inner += '<div class="reply-item" data-reply-id="' + escapeHTML(reply.id) + '">' +
-            replyAuthor +
+          inner += '<div class="reply-item">' +
             '<p class="reply-text">' + escapeHTML(reply.body) + '</p>' +
+            '<p class="reply-time">' + timeAgo(rDate) + '</p>' +
             '</div>';
         });
         inner += '</div>';
@@ -3812,81 +2822,24 @@ out center tags;`.trim();
 
       card.innerHTML = inner;
 
-      // Wire username links + avatars → open profile
-      card.querySelectorAll('.username-link, .report-author-avatar, .reply-author-avatar').forEach(function (el) {
-        el.addEventListener('click', function (e) {
-          e.stopPropagation();
-          openUserProfile(this.dataset.username);
-        });
-      });
-
-      // Wire reply delete buttons
-      card.querySelectorAll('.reply-user-delete').forEach(function (btn) {
-        btn.addEventListener('click', async function (e) {
-          e.stopPropagation();
-          if (!confirm('Delete your reply? This cannot be undone.')) return;
-          const replyId  = this.dataset.replyId;
-          const reportId = this.dataset.reportId;
-          try {
-            const reportRef = db.collection('station_reports').doc(stationId).collection('reports').doc(reportId);
-            await reportRef.collection('replies').doc(replyId).delete();
-            await reportRef.update({ reply_count: firebase.firestore.FieldValue.increment(-1) });
-            const replyEl = card.querySelector('.reply-item[data-reply-id="' + replyId + '"]');
-            if (replyEl) replyEl.remove();
-            showToast('Reply deleted');
-          } catch (err) {
-            showToast('Delete failed: ' + err.message);
-          }
-        });
-      });
-
       // Wire confirm "Still accurate" button
-      // Wire merged 👍 Still accurate button (toggleable)
-      card.querySelector('.thanks-btn').addEventListener('click', async function () {
-        if (!db || !currentDeviceId) { showToast('Sign in first'); return; }
-        if (this.disabled) return;
-
-        const btn = this;
-        const todayKey = currentDeviceId + '_' + new Date().toISOString().slice(0, 10);
-        const ref = db.collection('station_reports').doc(stationId).collection('reports').doc(report.id);
-        const currentCount = parseInt(btn.textContent.match(/\d+/)?.[0] || '0');
-        const newCount = currentCount + 1;
-
-        // Optimistic UI update
-        btn.classList.add('thanked');
-        btn.disabled = true;
-        btn.textContent = '✓' + ' ' + newCount + ' Confirmed today';
-
-        // Update the price card for this fuel type
-        if (report.fuel_type) {
-          const priceCard = document.getElementById('card-' + report.fuel_type);
-          if (priceCard && priceCard.classList.contains('has-data')) {
-            const ageEl = priceCard.querySelector('.fuel-age');
-            priceCard.classList.add('verified');
-            if (ageEl && !ageEl.dataset.origText) ageEl.dataset.origText = ageEl.textContent;
-            if (ageEl) ageEl.textContent = '✓ Verified today';
-          }
-        }
-
+      card.querySelector('.confirm-btn').addEventListener('click', async function () {
+        if (alreadyConfirmed) return;
+        if (!db || !currentDeviceId) { showToast('Sign in to confirm'); return; }
+        this.classList.add('confirmed');
+        this.disabled = true;
         try {
-          await ref.update({
+          await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).update({
             confirm_count: firebase.firestore.FieldValue.increment(1),
-            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(todayKey)
+            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
           });
+          const countEl = this.querySelector('.confirm-count');
+          countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
+          showToast('Marked as still accurate!');
         } catch (e) {
-          // Revert on failure
-          btn.classList.remove('thanked');
-          btn.disabled = false;
-          btn.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
-          if (report.fuel_type) {
-            const priceCard = document.getElementById('card-' + report.fuel_type);
-            if (priceCard) {
-              priceCard.classList.remove('verified');
-              const ageEl = priceCard.querySelector('.fuel-age');
-              if (ageEl && ageEl.dataset.origText) { ageEl.textContent = ageEl.dataset.origText; delete ageEl.dataset.origText; }
-            }
-          }
-          showToast('Could not save — try again');
+          console.error(e);
+          this.classList.remove('confirmed');
+          this.disabled = false;
         }
       });
 
@@ -3935,8 +2888,6 @@ out center tags;`.trim();
 
           await reportRef.collection('replies').add({
             body,
-            username: currentUsername || null,
-            device_id: currentDeviceId || null,
             created_at: firebase.firestore.FieldValue.serverTimestamp()
           });
           await reportRef.update({
@@ -3962,27 +2913,6 @@ out center tags;`.trim();
           if (!confirm('Delete this report? This cannot be undone.')) return;
           try {
             await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).delete();
-            card.remove();
-            showToast('Report deleted');
-          } catch (err) {
-            showToast('Delete failed: ' + err.message);
-          }
-        });
-      }
-
-      // Wire user self-delete button
-      const userDelBtn = card.querySelector('.report-user-delete');
-      if (userDelBtn) {
-        userDelBtn.addEventListener('click', async function () {
-          if (!confirm('Delete your report? This cannot be undone.')) return;
-          try {
-            await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).delete();
-            // Best-effort: also remove from user_activity mirror
-            if (currentUsername) {
-              const actSnap = await db.collection('user_activity').doc(currentUsername)
-                .collection('reports').where('station_id', '==', stationId).get();
-              actSnap.forEach(function (d) { d.ref.delete(); });
-            }
             card.remove();
             showToast('Report deleted');
           } catch (err) {
@@ -4053,44 +2983,23 @@ out center tags;`.trim();
         btn.textContent = 'Posting…';
 
         try {
-          // Check if this station has any reports yet (pioneer detection)
-          const existingSnap = await db.collection('station_reports').doc(currentStationId).collection('reports').limit(1).get();
-          const isFirstReport = existingSnap.empty;
-
-          const reportData = {
-            fuel_type:        hasPrice ? fuelType : null,
-            price_cents:      hasPrice ? Math.round(priceVal * 100) : null,
-            comment:          hasComment ? comment : null,
-            reply_count:      0,
-            username:         currentUsername || 'Anonymous',
-            device_id:        currentDeviceId || null,
-            station_id:       currentStationId,
-            is_first_report:  isFirstReport,
-            created_at:       firebase.firestore.FieldValue.serverTimestamp()
-          };
-          await db.collection('station_reports').doc(currentStationId).collection('reports').add(reportData);
-          if (isFirstReport && currentUsername) {
-            await db.collection('usernames').doc(currentUsername).update({
-              pioneer_count: firebase.firestore.FieldValue.increment(1)
+          await db
+            .collection('station_reports')
+            .doc(currentStationId)
+            .collection('reports')
+            .add({
+              fuel_type:   hasPrice ? fuelType : null,
+              price_cents: hasPrice ? Math.round(priceVal * 100) : null,
+              comment:     hasComment ? comment : null,
+              reply_count: 0,
+              username:    currentUsername || 'Anonymous',
+              device_id:   currentDeviceId || null,
+              station_id:  currentStationId,
+              created_at:  firebase.firestore.FieldValue.serverTimestamp()
             });
-          }
-
-          // Mirror to user_activity for fast profile queries (no index needed)
-          if (currentUsername) {
-            await db.collection('user_activity').doc(currentUsername).collection('reports').add(reportData);
-          }
 
           setRateLimit(currentStationId, 'report');
-          if (isFirstReport) {
-            showToast('🌟 First report on this station — Pioneer badge earned!');
-          } else if (hasPrice) {
-            const prevCents = currentPrices[fuelType] || null;
-            const newCents  = Math.round(priceVal * 100);
-            if (prevCents && newCents > prevCents) showSad();
-            else showNice();
-          } else {
-            showToast('Fill posted — thanks!');
-          }
+          showToast('Report posted — thanks!');
 
           // Reset form
           fuelSelect.value = '';
@@ -4105,7 +3014,7 @@ out center tags;`.trim();
           showToast('Failed to post. Try again.');
         } finally {
           btn.disabled = false;
-          btn.textContent = 'Post Fill';
+          btn.textContent = 'Post Report';
         }
       });
     }
@@ -4155,46 +3064,6 @@ out center tags;`.trim();
         .replace(/'/g, '&#039;');
     }
 
-    var niceQuips = [
-      'Nice!',
-      'Score!',
-      'Yes!!',
-      'Deal alert!',
-      'Love that.',
-      'Cha-ching!',
-      'Price drop!',
-      'Treat yourself.',
-      'Go fill up now!',
-      'Saving is caring.',
-    ];
-    var sadQuips = [
-      'Oh.. hope it goes down soon :(',
-      'Yikes. That hurts.',
-      'Ouch.',
-      'The struggle is real.',
-      'Time to carpool?',
-      'Feeling the squeeze.',
-      'Your wallet is crying.',
-      'Oof.',
-      'Maybe take the bus?',
-      'Highway robbery.',
-    ];
-    function showNice() { showBurst(false); }
-    function showSad()  { showBurst(true);  }
-    function showBurst(sad) {
-      const pool = sad ? sadQuips : niceQuips;
-      const msg  = pool[Math.floor(Math.random() * pool.length)];
-      const el   = document.getElementById('nice-burst');
-      el.textContent = msg;
-      el.classList.remove('pop', 'sad');
-      void el.offsetWidth;
-      if (sad) el.classList.add('sad');
-      el.classList.add('pop');
-      el.addEventListener('animationend', function () {
-        el.classList.remove('pop', 'sad');
-      }, { once: true });
-    }
-
     function showToast(msg, duration) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -4202,18 +3071,12 @@ out center tags;`.trim();
       setTimeout(function () { el.classList.remove('show'); }, duration || 2800);
     }
 
-    function setLoadingProgress(pct, msg) {
-      const fill = document.getElementById('donut-fill');
-      const text = document.getElementById('loading-text');
-      if (fill) fill.style.strokeDashoffset = 289 * (1 - pct / 100);
-      if (msg && text) text.textContent = msg;
+    function setLoadingText(msg) {
+      document.getElementById('loading-text').textContent = msg;
     }
 
     function hideLoading() {
-      setLoadingProgress(100, 'Ready!');
-      setTimeout(function () {
-        document.getElementById('loading-overlay').classList.add('hidden');
-      }, 350);
+      document.getElementById('loading-overlay').classList.add('hidden');
     }
 
     // ── ADMIN ─────────────────────────────────────────────────────────
@@ -4248,7 +3111,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
           return;
         }
 
@@ -4261,7 +3124,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        countEl.textContent = docs.length + ' fills';
+        countEl.textContent = docs.length + ' reports';
         feed.innerHTML = '';
 
         docs.forEach(function (doc) {
@@ -4308,7 +3171,7 @@ out center tags;`.trim();
               await doc.ref.delete();
               row.remove();
               const remaining = feed.querySelectorAll('.admin-row').length;
-              countEl.textContent = remaining + ' fills';
+              countEl.textContent = remaining + ' reports';
               showToast('Report deleted');
             } catch (err) {
               showToast('Delete failed: ' + err.message);
@@ -4353,25 +3216,19 @@ out center tags;`.trim();
 
     // ── SEARCH ────────────────────────────────────────────────────────
     function setupSearch() {
-      const widget        = document.getElementById('search-widget');
-      const toggle        = document.getElementById('search-toggle');
-      const bar           = document.getElementById('search-bar');
-      const input         = document.getElementById('search-input');
-      const clearBtn      = document.getElementById('search-clear');
-      const results       = document.getElementById('search-results');
-      const barUsers      = document.getElementById('search-bar-users');
-      const inputUsers    = document.getElementById('search-input-users');
-      const clearBtnUsers = document.getElementById('search-clear-users');
-      const resultsUsers  = document.getElementById('search-results-users');
+      const widget   = document.getElementById('search-widget');
+      const toggle   = document.getElementById('search-toggle');
+      const bar      = document.getElementById('search-bar');
+      const input    = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear');
+      const results  = document.getElementById('search-results');
 
-      let debounceTimer     = null;
-      let debounceUserTimer = null;
+      let debounceTimer = null;
       let isOpen = false;
 
       function openSearch() {
         isOpen = true;
         bar.classList.add('open');
-        barUsers.classList.add('open');
         document.getElementById('filter-panel').classList.add('open');
         input.focus();
       }
@@ -4379,15 +3236,10 @@ out center tags;`.trim();
       function closeSearch() {
         isOpen = false;
         bar.classList.remove('open');
-        barUsers.classList.remove('open');
         results.classList.remove('open');
         results.innerHTML = '';
-        resultsUsers.classList.remove('open');
-        resultsUsers.innerHTML = '';
         input.value = '';
-        inputUsers.value = '';
         clearTimeout(debounceTimer);
-        clearTimeout(debounceUserTimer);
         document.getElementById('filter-panel').classList.remove('open');
       }
 
@@ -4396,14 +3248,6 @@ out center tags;`.trim();
       });
 
       clearBtn.addEventListener('click', function () { closeSearch(); });
-
-      // Users clear button only clears the user search, not the whole widget
-      clearBtnUsers.addEventListener('click', function () {
-        inputUsers.value = '';
-        resultsUsers.classList.remove('open');
-        resultsUsers.innerHTML = '';
-        clearTimeout(debounceUserTimer);
-      });
 
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isOpen) closeSearch();
@@ -4447,21 +3291,6 @@ out center tags;`.trim();
       }
 
       // ── Render results into dropdown
-      async function searchUsers(q) {
-        if (!db || q.length < 2) return [];
-        try {
-          const snap = await db.collection('usernames')
-            .orderBy(firebase.firestore.FieldPath.documentId())
-            .startAt(q.toLowerCase())
-            .endAt(q.toLowerCase() + '')
-            .limit(4)
-            .get();
-          const names = [];
-          snap.forEach(function (doc) { names.push(doc.id); });
-          return names;
-        } catch (e) { return []; }
-      }
-
       function renderResults(stations, places) {
         results.innerHTML = '';
         const hasStations = stations.length > 0;
@@ -4531,7 +3360,7 @@ out center tags;`.trim();
         results.classList.add('open');
       }
 
-      // ── Stations / address input handler
+      // ── Input handler
       input.addEventListener('input', function () {
         const q = this.value.trim();
         clearTimeout(debounceTimer);
@@ -4544,54 +3373,17 @@ out center tags;`.trim();
 
         // Show station results immediately
         const stationMatches = searchStations(q);
-        if (stationMatches.length > 0) renderResults(stationMatches, []);
 
         // Debounce geocoding
         debounceTimer = setTimeout(async function () {
           const placeMatches = await geocodeQuery(q);
           renderResults(stationMatches, placeMatches);
         }, 400);
-      });
 
-      // ── Users input handler
-      inputUsers.addEventListener('input', function () {
-        const q = this.value.trim();
-        clearTimeout(debounceUserTimer);
-
-        if (q.length < 2) {
-          resultsUsers.classList.remove('open');
-          resultsUsers.innerHTML = '';
-          return;
+        // Show stations while waiting for geocode
+        if (stationMatches.length > 0) {
+          renderResults(stationMatches, []);
         }
-
-        debounceUserTimer = setTimeout(async function () {
-          const userMatches = await searchUsers(q);
-          resultsUsers.innerHTML = '';
-          if (!userMatches.length) {
-            resultsUsers.innerHTML = '<p class="search-no-results">No users found</p>';
-            resultsUsers.classList.add('open');
-            return;
-          }
-          userMatches.forEach(function (username) {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            const color = avatarColor(username);
-            const cachedEmoji = avatarCache[username]?.emoji || null;
-            const cachedColor = avatarCache[username]?.color || null;
-            const avatarContent = cachedEmoji ? escapeHTML(cachedEmoji) : escapeHTML((username[0] || '?').toUpperCase());
-            const avatarBg = cachedColor || (cachedEmoji ? color + '55' : color);
-            item.innerHTML =
-              '<div class="avatar-circle" style="background:' + avatarBg + '">' + avatarContent + '</div>' +
-              '<div class="search-result-text"><div class="search-result-name">@' + escapeHTML(username) + '</div></div>';
-            item.addEventListener('pointerdown', function (e) { e.preventDefault(); });
-            item.addEventListener('click', function () {
-              closeSearch();
-              openUserProfile(username);
-            });
-            resultsUsers.appendChild(item);
-          });
-          resultsUsers.classList.add('open');
-        }, 300);
       });
     }
 
@@ -4732,19 +3524,16 @@ out center tags;`.trim();
         list.innerHTML = '';
         docs.forEach(function (doc) {
           const d = doc.data();
+          const parts = [];
+          if (d.fuel_type && d.price_cents) parts.push((fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2));
+          if (d.comment) parts.push('"' + escapeHTML(d.comment) + '"');
           const date = d.created_at ? d.created_at.toDate() : new Date();
-          const priceLabel = (d.fuel_type && d.price_cents)
-            ? (fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2)
-            : '';
           const item = document.createElement('div');
-          item.className = 'my-post-row';
+          item.className = 'history-row';
+          item.style.cursor = 'default';
           item.innerHTML =
-            '<div>' +
-              (priceLabel ? '<div class="my-post-label">' + escapeHTML(priceLabel) + '</div>' : '') +
-              (d.comment ? '<div class="my-post-comment">"' + escapeHTML(d.comment) + '"</div>' : '') +
-              (!priceLabel && !d.comment ? '<div class="my-post-label" style="color:var(--text3)">(no content)</div>' : '') +
-            '</div>' +
-            '<div class="my-post-date">' + timeAgo(date) + '</div>';
+            '<div class="history-row-body">' + (parts.join(' · ') || '(empty)') + '</div>' +
+            '<div class="history-row-meta">' + date.toLocaleString() + '</div>';
           list.appendChild(item);
         });
         section.style.display = 'block';
@@ -4760,23 +3549,14 @@ out center tags;`.trim();
       const title    = document.getElementById('history-title');
       const subtitle = document.getElementById('history-subtitle');
 
-      title.textContent    = currentUsername ? currentUsername + "'s fills" : 'My fills';
+      title.textContent    = currentUsername ? currentUsername + "'s Reports" : 'My Reports';
       subtitle.textContent = '';
       feed.innerHTML       = '<p class="no-data-msg">Loading…</p>';
-      const histAvatar = document.getElementById('history-avatar');
-      if (histAvatar && currentUsername) {
-        renderAvatarEl(histAvatar, currentUsername, avatarCache[currentUsername]?.emoji, avatarCache[currentUsername]?.color);
-        histAvatar.style.cursor = 'pointer';
-        histAvatar.onclick = function () {
-          currentProfileUser = currentUsername;
-          openEmojiPicker();
-        };
-      }
       panel.classList.add('open');
       document.getElementById('panel-backdrop').classList.add('visible');
 
       if (!db || !currentDeviceId) {
-        feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
+        feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
         return;
       }
 
@@ -4795,7 +3575,7 @@ out center tags;`.trim();
         });
 
         if (docs.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet — tap a station and post one!</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports yet — tap a station and post one!</p>';
           return;
         }
 
@@ -4805,7 +3585,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -4901,7 +3681,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No fills from this user.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports from this user.</p>';
           return;
         }
 
@@ -4913,7 +3693,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -5079,16 +3859,14 @@ out center tags;`.trim();
           const snap = await db.collectionGroup('reports').limit(500).get();
           const counts = {};
           snap.forEach(function (doc) {
-            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
             const u = doc.data().username;
             if (u && u !== 'Anonymous') counts[u] = (counts[u] || 0) + 1;
           });
           const sorted = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20);
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No fills yet — be the first!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No reports yet — be the first!</p>';
             return;
           }
-          await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
           subtitle.textContent = sorted.length + ' contributors';
           feed.innerHTML = '';
           sorted.forEach(function (entry, i) {
@@ -5099,107 +3877,14 @@ out center tags;`.trim();
             const row = document.createElement('div');
             row.className = 'leaderboard-row' + (isMe ? ' age-fresh' : '');
             row.style.borderColor = isMe ? '#4caf50' : '';
-            row.style.cursor = 'pointer';
             row.innerHTML =
               '<div class="leaderboard-rank ' + rankClass + '">' + medal + '</div>' +
-              avatarHTML(entry[0]) +
               '<div class="leaderboard-name">' + escapeHTML(entry[0]) + (isMe ? ' <span style="color:#4caf50;font-size:11px">(you)</span>' : '') + '</div>' +
               '<div class="leaderboard-count">' + entry[1] + ' report' + (entry[1] === 1 ? '' : 's') + '</div>';
-            row.addEventListener('click', function () { openUserProfile(entry[0]); });
             feed.appendChild(row);
           });
         } catch (e) {
           feed.innerHTML = '<p class="no-data-msg">Could not load leaderboard.</p>';
-        }
-
-      } else if (tab === 'best-prices') {
-        // ── BEST PRICES ───────────────────────────────────────────────
-        title.textContent = 'Best Prices';
-        subtitle.textContent = 'Cheapest gas in LA right now';
-        try {
-          const snap = await db.collectionGroup('reports').limit(500).get();
-          const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
-
-          // Most recent price per station (any fuel type)
-          const best = {}; // { stationId: { price_cents, fuel_type, created_at } }
-          snap.forEach(function (doc) {
-            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
-            const d = doc.data();
-            if (!d.price_cents || !d.fuel_type) return;
-            const stationId = doc.ref.parent.parent.id;
-            const ts = d.created_at ? d.created_at.toDate() : null;
-            if (!best[stationId] || d.price_cents < best[stationId].price_cents) {
-              best[stationId] = { price_cents: d.price_cents, fuel_type: d.fuel_type, created_at: ts, stationId: stationId };
-            }
-          });
-
-          const sorted = Object.values(best)
-            .sort(function (a, b) { return a.price_cents - b.price_cents; })
-            .slice(0, 5);
-
-          if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No prices reported yet — be the first!</p>';
-            return;
-          }
-
-          subtitle.textContent = sorted.length + ' cheapest stations';
-          feed.innerHTML = '';
-          sorted.forEach(function (info, i) {
-            const rank = i + 1;
-            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
-            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
-            const price = '$' + (info.price_cents / 100).toFixed(2);
-            const fuel = fuelLabel[info.fuel_type] || info.fuel_type;
-            const ago = info.created_at ? timeAgo(info.created_at) : 'unknown';
-
-            // Look up station name + brand from GeoJSON
-            let stationName = info.stationId;
-            let stationBrand = '';
-            let coords = null;
-            if (stationsGeoJSON) {
-              const feat = stationsGeoJSON.features.find(function (f) {
-                return String(f.properties.id) === String(info.stationId);
-              });
-              if (feat) {
-                stationName = feat.properties.name || feat.properties.brand || info.stationId;
-                stationBrand = feat.properties.brand || '';
-                coords = feat.geometry.coordinates;
-              }
-            }
-
-            const row = document.createElement('div');
-            row.className = 'leaderboard-row';
-            row.style.cursor = 'pointer';
-            row.innerHTML =
-              '<div class="leaderboard-rank ' + rankClass + '" style="font-size:18px">' + medal + '</div>' +
-              '<div class="leaderboard-name" style="flex:1;min-width:0">' +
-                '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHTML(stationName) + '</div>' +
-                '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + (stationBrand ? escapeHTML(stationBrand) + ' · ' : '') + ago + '</div>' +
-              '</div>' +
-              '<div style="text-align:right;flex-shrink:0">' +
-                '<div style="font-weight:800;font-size:18px;color:#2e7d32">' + price + '</div>' +
-                '<div style="font-size:11px;color:var(--text3)">' + fuel + '</div>' +
-              '</div>';
-            row.addEventListener('click', function () {
-              document.getElementById('leaderboard-panel').classList.remove('open');
-              document.getElementById('panel-backdrop').classList.remove('visible');
-              if (coords) {
-                map.flyTo({ center: coords, zoom: 16, duration: 800 });
-              }
-              // Open bottom sheet for this station
-              if (stationsGeoJSON) {
-                const feat = stationsGeoJSON.features.find(function (f) {
-                  return String(f.properties.id) === String(info.stationId);
-                });
-                if (feat) {
-                  setTimeout(function () { openSheet(feat.properties); }, coords ? 900 : 0);
-                }
-              }
-            });
-            feed.appendChild(row);
-          });
-        } catch (e) {
-          feed.innerHTML = '<p class="no-data-msg">Could not load best prices.</p>';
         }
 
       } else {
@@ -5213,7 +3898,6 @@ out center tags;`.trim();
           // Per user: track their single lowest price_cents in the last 30 days
           const best = {}; // { username: { price_cents, fuel_type, created_at } }
           snap.forEach(function (doc) {
-            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
             const d = doc.data();
             if (!d.username || d.username === 'Anonymous') return;
             if (!d.price_cents || !d.fuel_type) return;
@@ -5229,11 +3913,10 @@ out center tags;`.trim();
             .slice(0, 20);
 
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No price fills in the last 30 days yet!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No price reports in the last 30 days yet!</p>';
             return;
           }
 
-          await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
           const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
           feed.innerHTML = '';
           sorted.forEach(function (entry, i) {
@@ -5248,16 +3931,13 @@ out center tags;`.trim();
             const row   = document.createElement('div');
             row.className = 'leaderboard-row' + (isMe ? ' age-fresh' : '');
             row.style.borderColor = isMe ? '#4caf50' : '';
-            row.style.cursor = 'pointer';
             row.innerHTML =
               '<div class="leaderboard-rank ' + rankClass + '">' + medal + '</div>' +
-              avatarHTML(entry[0]) +
               '<div class="leaderboard-name">' + escapeHTML(entry[0]) + (isMe ? ' <span style="color:#4caf50;font-size:11px">(you)</span>' : '') + '</div>' +
               '<div class="leaderboard-count" style="text-align:right">' +
                 '<div style="font-weight:700;color:var(--accent)">' + price + '</div>' +
                 '<div style="font-size:11px;color:var(--text3)">' + fuel + ' · ' + ago + '</div>' +
               '</div>';
-            row.addEventListener('click', function () { openUserProfile(entry[0]); });
             feed.appendChild(row);
           });
         } catch (e) {
@@ -5273,7 +3953,7 @@ out center tags;`.trim();
     }
 
     function closeAllPanels() {
-      ['history-panel', 'leaderboard-panel', 'cheapest-panel', 'user-profile-panel'].forEach(function (id) {
+      ['history-panel', 'leaderboard-panel', 'cheapest-panel'].forEach(function (id) {
         document.getElementById(id).classList.remove('open');
       });
       document.getElementById('panel-backdrop').classList.remove('visible');
@@ -5348,7 +4028,6 @@ out center tags;`.trim();
         const snap = await db.collectionGroup('reports').limit(500).get();
         const priceMap = {}; // stationId → { price_cents, created_at }
         snap.forEach(function (doc) {
-          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
           const d = doc.data();
           if (d.fuel_type !== fuelType || !d.price_cents) return;
           const sid = d.station_id || doc.ref.parent.parent.id;
@@ -5435,721 +4114,19 @@ out center tags;`.trim();
     }
 
     // ── BOOT ──────────────────────────────────────────────────────────
-    // ── AVATAR HELPERS ────────────────────────────────────────────────
-    var avatarCache = {};  // username → { emoji, color }
-
-    var AVATAR_COLORS = [
-      '#e53935', '#e91e63', '#8e24aa', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b',
-      '#43a047', '#7cb342', '#f9a825', '#fb8c00', '#f4511e', '#795548', '#546e7a', '#37474f',
-      '#ef9a9a', '#f48fb1', '#ce93d8', '#90caf9', '#80deea', '#a5d6a7', '#fff176', '#ffcc80',
-      '#ffffff', '#e0e0e0', '#bdbdbd', '#9e9e9e', '#757575', '#616161', '#424242', '#212121'
-    ];
-
-    function avatarColor(username) {
-      var palette = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#43a047','#6d4c41','#1565c0','#d81b60','#f57f17'];
-      var hash = 0;
-      for (var i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      return palette[Math.abs(hash) % palette.length];
-    }
-
-    function renderAvatarEl(el, username, avatarEmoji, savedColor) {
-      // Remove only text nodes — preserve <div> children (upload hint)
-      Array.from(el.childNodes).forEach(function (node) {
-        if (node.nodeType === 3) el.removeChild(node);
-      });
-      var autoColor = avatarColor(username);
-      if (avatarEmoji) {
-        el.insertBefore(document.createTextNode(avatarEmoji), el.firstChild);
-        el.style.background = savedColor || (autoColor + '55');
-      } else {
-        el.insertBefore(document.createTextNode((username[0] || '?').toUpperCase()), el.firstChild);
-        el.style.background = savedColor || autoColor;
-      }
-    }
-
-    async function fetchAvatarBatch(usernames) {
-      await Promise.all(usernames.map(async function (username) {
-        if (avatarCache[username]) return;
-        try {
-          const doc = await db.collection('usernames').doc(username).get();
-          const d = doc.exists ? doc.data() : {};
-          avatarCache[username] = { emoji: d.avatar_emoji || null, color: d.avatar_color || null };
-        } catch (e) {
-          avatarCache[username] = { emoji: null, color: null };
-        }
-      }));
-    }
-
-    function avatarHTML(username) {
-      const emoji = avatarCache[username]?.emoji || null;
-      const color = avatarCache[username]?.color || null;
-      const auto  = avatarColor(username);
-      const bg    = color || (emoji ? auto + '55' : auto);
-      const body  = emoji ? escapeHTML(emoji) : escapeHTML((username[0] || '?').toUpperCase());
-      return '<div class="avatar-circle" style="width:34px;height:34px;font-size:18px;background:' + bg + '">' + body + '</div>';
-    }
-
-    // ── USER PROFILE PANEL ────────────────────────────────────────────
-    function closeUserProfile() {
-      document.getElementById('user-profile-panel').classList.remove('open');
-      document.getElementById('panel-backdrop').classList.remove('visible');
-    }
-
-    async function openUserProfile(username) {
-      if (!db) return;
-      currentProfileUser = username;
-      const panel   = document.getElementById('user-profile-panel');
-      const feed    = document.getElementById('user-profile-feed');
-      const nameEl  = document.getElementById('user-profile-name');
-      const metaEl  = document.getElementById('user-profile-meta');
-      const avatarEl = document.getElementById('user-profile-avatar-large');
-      const uploadHint = document.getElementById('avatar-upload-hint');
-      const isOwnProfile = (username === currentUsername);
-
-      // Render immediately
-      nameEl.textContent = username;
-      metaEl.textContent = 'Loading…';
-      feed.innerHTML = '<p class="no-data-msg">Loading…</p>';
-      renderAvatarEl(avatarEl, username, avatarCache[username]?.emoji, avatarCache[username]?.color);
-
-      // Show edit hint only on own profile — clear onclick for others
-      if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
-      avatarEl.onclick = isOwnProfile ? openEmojiPicker : null;
-      showPriceAlertSection(isOwnProfile);
-
-      // Open panel
-      closeAllPanels();
-      panel.classList.add('open');
-      document.getElementById('panel-backdrop').classList.add('visible');
-
-      try {
-        // Fetch user doc
-        const userDoc = await db.collection('usernames').doc(username).get();
-        var joinText = '';
-        var avatarUrl = null;
-        if (userDoc.exists) {
-          const d = userDoc.data();
-          const joinDate = d.created_at?.toDate?.();
-          if (joinDate) joinText = 'Joined ' + joinDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          const avatarEmoji = d.avatar_emoji || null;
-          const savedAvatarColor = d.avatar_color || null;
-          avatarCache[username] = { emoji: avatarEmoji, color: savedAvatarColor };
-          renderAvatarEl(avatarEl, username, avatarEmoji, savedAvatarColor);
-        }
-
-        // Fetch all recent reports and filter by username client-side — no index needed
-        const snap = await db.collectionGroup('reports').limit(500).get();
-
-        const reports = [];
-        const allCounts = {};
-        const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const bestPrice = {}; // username → lowest price_cents in last 30 days
-        snap.forEach(function (doc) {
-          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
-          const d = doc.data();
-          if (d.username === username) reports.push({ id: doc.id, ...d });
-          if (d.username && d.username !== 'Anonymous') {
-            allCounts[d.username] = (allCounts[d.username] || 0) + 1;
-            if (d.price_cents && d.created_at?.toDate?.() >= cutoff30) {
-              if (!bestPrice[d.username] || d.price_cents < bestPrice[d.username]) {
-                bestPrice[d.username] = d.price_cents;
-              }
-            }
-          }
-        });
-        reports.sort(function (a, b) {
-          return (b.created_at?.toMillis?.() || 0) - (a.created_at?.toMillis?.() || 0);
-        });
-
-        // Determine contributor rank
-        const sortedContribs = Object.entries(allCounts).sort(function (a, b) { return b[1] - a[1]; });
-        const contribRank = sortedContribs.findIndex(function (e) { return e[0] === username; }) + 1;
-
-        // Determine price hunter rank (lowest price in last 30 days)
-        const sortedPrices = Object.entries(bestPrice).sort(function (a, b) { return a[1] - b[1]; });
-        const priceRank = sortedPrices.findIndex(function (e) { return e[0] === username; }) + 1;
-
-        // Render badges
-        const badgesEl = document.getElementById('user-profile-badges');
-        if (badgesEl) {
-          badgesEl.innerHTML = '';
-          if (contribRank >= 1 && contribRank <= 3) {
-            const medal = contribRank === 1 ? '🥇' : contribRank === 2 ? '🥈' : '🥉';
-            const cls   = contribRank === 1 ? 'profile-badge-gold' : contribRank === 2 ? 'profile-badge-silver' : 'profile-badge-bronze';
-            const label = contribRank === 1 ? 'Top Contributor' : contribRank === 2 ? '#2 Contributor' : '#3 Contributor';
-            badgesEl.innerHTML += '<span class="profile-badge ' + cls + '">' + medal + ' ' + label + '</span>';
-          }
-          if (priceRank >= 1 && priceRank <= 3 && bestPrice[username]) {
-            const medal = priceRank === 1 ? '🏆' : priceRank === 2 ? '🥈' : '🥉';
-            const label = priceRank === 1 ? 'Price Hunter' : '#' + priceRank + ' Price Hunter';
-            badgesEl.innerHTML += '<span class="profile-badge profile-badge-hunter">' + medal + ' ' + label + '</span>';
-          }
-          // Pioneer badge
-          const pioneerCount = reports.filter(function (r) { return r.is_first_report; }).length;
-          if (pioneerCount > 0) {
-            badgesEl.innerHTML += '<span class="profile-badge profile-badge-pioneer">🌟 Pioneer' + (pioneerCount > 1 ? ' ×' + pioneerCount : '') + '</span>';
-          }
-          // Streak badge
-          const DAY_MS = 86400000;
-          const todayMs = new Date().setHours(0,0,0,0);
-          const uniqueDays = [...new Set(reports.map(function (r) {
-            const d = r.created_at?.toDate?.();
-            return d ? new Date(d).setHours(0,0,0,0) : null;
-          }).filter(Boolean))].sort(function (a, b) { return b - a; });
-          let streak = 0;
-          if (uniqueDays.length && (uniqueDays[0] === todayMs || uniqueDays[0] === todayMs - DAY_MS)) {
-            streak = 1;
-            for (var i = 1; i < uniqueDays.length; i++) {
-              if (uniqueDays[i-1] - uniqueDays[i] === DAY_MS) streak++;
-              else break;
-            }
-          }
-          if (streak >= 2) {
-            badgesEl.innerHTML += '<span class="profile-badge profile-badge-streak">🔥 ' + streak + '-day streak</span>';
-          }
-        }
-
-        const priceCount = reports.filter(function (r) { return r.price_cents; }).length;
-        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' fill' + (priceCount !== 1 ? 's' : '') + ' logged';
-
-        feed.innerHTML = '';
-        if (reports.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
-          return;
-        }
-
-        const fuelLabels = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
-        reports.forEach(function (r) {
-          if (!r.price_cents && !r.comment) return;
-          const feature = stationsGeoJSON && stationsGeoJSON.features.find(function (f) {
-            return String(f.properties.id) === String(r.station_id);
-          });
-          const stationName = feature ? (feature.properties.name || feature.properties.brand || 'Gas Station') : 'Gas Station';
-          const stationAddr = feature?.properties?.address || '';
-          const date = r.created_at?.toDate?.() || new Date();
-
-          const row = document.createElement('div');
-          row.className = 'user-report-row';
-          row.innerHTML =
-            '<div><span class="user-report-station-name">' + escapeHTML(stationName) + '</span>' +
-            (stationAddr ? ' <span class="user-report-addr">· ' + escapeHTML(stationAddr) + '</span>' : '') + '</div>' +
-            (r.price_cents ? '<div class="report-price-badge" style="margin:6px 0 4px">' + escapeHTML(fuelLabels[r.fuel_type] || r.fuel_type) + ' $' + (r.price_cents / 100).toFixed(2) + '</div>' : '') +
-            (r.comment ? '<p class="report-comment" style="margin:4px 0">' + escapeHTML(r.comment) + '</p>' : '') +
-            '<div class="user-report-meta">' + timeAgo(date) + '</div>';
-
-          if (r.station_id && feature) {
-            row.addEventListener('click', function () {
-              closeAllPanels();
-              map.flyTo({ center: feature.geometry.coordinates, zoom: 16, duration: 900, essential: true });
-              map.once('moveend', function () { openSheet(feature.properties); });
-            });
-          }
-          feed.appendChild(row);
-        });
-
-      } catch (e) {
-        console.error('openUserProfile error:', e);
-        feed.innerHTML = '<p class="no-data-msg">Could not load profile.</p>';
-      }
-    }
-
-    // ── EMOJI AVATAR ──────────────────────────────────────────────────
-    var AVATAR_EMOJIS = [
-      // faces
-      '😀','😄','😎','🥳','🤩','🥰','😏','🙃',
-      '😤','🤯','👻','💀','🤖','👽','🎃','🫡',
-      // animals
-      '🐱','🐶','🦊','🐼','🐨','🦁','🐯','🐻',
-      '🐸','🐺','🐮','🐷','🐧','🦉','🦅','🦜',
-      '🦋','🐝','🐢','🦎','🐬','🦈','🐙','🦄',
-      '🦝','🦔','🦭','🐲','🦌','🐓','🦩','🐿️',
-      // plants & green life
-      '🌿','🌱','🌲','🌴','🌵','🍀','🌸','🌺',
-      '🌻','🌹','🍄','🌾','🎋','🪴','🌳','🍃',
-      // sky, space & weather
-      '⭐','🌟','💫','✨','🌙','🌛','🌕','☀️',
-      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍',
-      // fruits
-      '🍎','🍊','🍋','🍅','🍓','🍒','🍍','🥝',
-      '🍌','🍉','🫐','🥭','🍈','🍐','🍏','🥥'
-    ];
-
-    var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-
-    function updateProfileBtn() {
-      const btn = document.getElementById('profile-btn');
-      if (!btn || !currentUsername) return;
-      const emoji = avatarCache[currentUsername]?.emoji || null;
-      const color = avatarCache[currentUsername]?.color || null;
-      if (emoji) {
-        btn.innerHTML = '<span style="font-size:22px;line-height:1;pointer-events:none">' + emoji + '</span>';
-        btn.style.background = color || avatarColor(currentUsername);
-      } else {
-        btn.innerHTML = PROFILE_BTN_SVG;
-        btn.style.background = '';
-      }
-    }
-
-    function openEmojiPicker() {
-      if (currentProfileUser !== currentUsername) return;
-      // Highlight current emoji in grid
-      const currentEmoji = avatarCache[currentUsername]?.emoji || null;
-      document.getElementById('emoji-grid').querySelectorAll('.emoji-opt').forEach(function (btn) {
-        btn.classList.toggle('selected', btn.textContent === currentEmoji);
-      });
-      buildColorSwatches();
-      document.getElementById('emoji-reset-btn').style.display = currentEmoji ? '' : 'none';
-      document.getElementById('emoji-picker-modal').classList.add('open');
-    }
-
-    function buildColorSwatches() {
-      const row = document.getElementById('color-swatches-row');
-      row.innerHTML = '';
-      const currentColor = avatarCache[currentUsername]?.color || null;
-
-      AVATAR_COLORS.forEach(function (color) {
-        const btn = document.createElement('button');
-        btn.className = 'color-swatch';
-        btn.style.background = color;
-        if (color === currentColor) btn.classList.add('selected');
-        btn.addEventListener('click', function () {
-          row.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
-          btn.classList.add('selected');
-          saveAvatarColor(color);
-        });
-        row.appendChild(btn);
-      });
-
-      const resetBtn = document.getElementById('color-reset-btn');
-      if (resetBtn) {
-        resetBtn.textContent = currentColor ? 'Reset to default' : 'Using default color';
-        resetBtn.onclick = function () {
-          row.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
-          resetBtn.textContent = 'Using default color';
-          saveAvatarColor(null);
-        };
-      }
-    }
-
-    async function saveAvatarColor(color) {
-      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
-      try {
-        await db.collection('usernames').doc(currentUsername).update({ avatar_color: color || '' });
-        const cachedEmoji = avatarCache[currentUsername]?.emoji || null;
-        avatarCache[currentUsername] = { emoji: cachedEmoji, color: color };
-        const avatarEl = document.getElementById('user-profile-avatar-large');
-        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, cachedEmoji, color);
-        const histAvatar = document.getElementById('history-avatar');
-        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, cachedEmoji, color);
-        updateProfileBtn();
-        showToast('Color updated!');
-      } catch (e) {
-        console.error('Color save failed:', e);
-        showToast('Could not save — try again');
-      }
-    }
-
-    async function resetAvatar() {
-      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
-      try {
-        await db.collection('usernames').doc(currentUsername).update({ avatar_emoji: '', avatar_color: '' });
-        avatarCache[currentUsername] = { emoji: null, color: null };
-        const avatarEl = document.getElementById('user-profile-avatar-large');
-        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, null, null);
-        const histAvatar = document.getElementById('history-avatar');
-        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, null, null);
-        updateProfileBtn();
-        showToast('Emoji removed');
-      } catch (e) { showToast('Could not save — try again'); }
-    }
-
-    async function saveAvatarEmoji(emoji) {
-      if (!db || !currentUsername || currentProfileUser !== currentUsername) return;
-      try {
-        await db.collection('usernames').doc(currentUsername).update({ avatar_emoji: emoji });
-        const savedColor = avatarCache[currentUsername]?.color || null;
-        avatarCache[currentUsername] = { emoji: emoji, color: savedColor };
-        const avatarEl = document.getElementById('user-profile-avatar-large');
-        if (avatarEl) renderAvatarEl(avatarEl, currentUsername, emoji, savedColor);
-        const histAvatar = document.getElementById('history-avatar');
-        if (histAvatar) renderAvatarEl(histAvatar, currentUsername, emoji, savedColor);
-        updateProfileBtn();
-        showToast('Avatar updated!');
-      } catch (e) {
-        console.error('Avatar save failed:', e);
-        showToast('Could not save — try again');
-      }
-    }
-
-    function setupUserProfile() {
-      document.getElementById('user-profile-close').addEventListener('click', function () {
-        document.getElementById('user-profile-panel').classList.remove('open');
-        document.getElementById('panel-backdrop').classList.remove('visible');
-      });
-
-      // Build emoji grid
-      const grid = document.getElementById('emoji-grid');
-      AVATAR_EMOJIS.forEach(function (emoji) {
-        const btn = document.createElement('button');
-        btn.className = 'emoji-opt';
-        btn.textContent = emoji;
-        btn.addEventListener('click', function () {
-          grid.querySelectorAll('.emoji-opt').forEach(function (b) { b.classList.remove('selected'); });
-          btn.classList.add('selected');
-          saveAvatarEmoji(emoji);
-        });
-        grid.appendChild(btn);
-      });
-
-      // Remove emoji button
-      document.getElementById('emoji-reset-btn').addEventListener('click', function () {
-        grid.querySelectorAll('.emoji-opt').forEach(function (b) { b.classList.remove('selected'); });
-        document.getElementById('color-swatches-row').querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('selected'); });
-        const colorResetBtn = document.getElementById('color-reset-btn');
-        if (colorResetBtn) colorResetBtn.textContent = 'Using default color';
-        document.getElementById('emoji-reset-btn').style.display = 'none';
-        resetAvatar();
-      });
-
-      // Close picker on × or backdrop tap
-      document.getElementById('emoji-picker-close').addEventListener('click', function () {
-        document.getElementById('emoji-picker-modal').classList.remove('open');
-      });
-      document.getElementById('emoji-picker-modal').addEventListener('click', function (e) {
-        if (e.target === this) this.classList.remove('open');
-      });
-    }
-
-    function setupInstallBanner() {
-      const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      const isStandalone = window.navigator.standalone === true;
-      const isSafari     = /safari/i.test(navigator.userAgent) && !/chrome|crios|fxios|android/i.test(navigator.userAgent);
-      if (!isIOS || isStandalone || !isSafari) return;
-
-      const DISMISS_KEY = 'install_banner_dismissed';
-      const dismissed   = localStorage.getItem(DISMISS_KEY);
-      if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
-
-      // Show after a short delay so the map loads first
-      setTimeout(function () {
-        const banner = document.getElementById('install-banner');
-        banner.classList.add('visible');
-        document.getElementById('install-banner-close').addEventListener('click', function () {
-          banner.classList.remove('visible');
-          localStorage.setItem(DISMISS_KEY, Date.now().toString());
-        });
-      }, 2500);
-    }
-
-    async function fetchRegularPrices() {
-      if (priceViewFetched || !db || !stationsGeoJSON) return;
-      try {
-        const snap = await db.collectionGroup('reports').limit(500).get();
-        const latest = {};
-        snap.forEach(function (doc) {
-          if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
-          const d = doc.data();
-          if (d.fuel_type !== 'regular' || !d.price_cents) return;
-          const sid = d.station_id || doc.ref.parent.parent.id;
-          const ts = d.created_at ? d.created_at.toMillis() : 0;
-          if (!latest[sid] || ts > latest[sid].ts) latest[sid] = { price_cents: d.price_cents, ts };
-        });
-        stationsGeoJSON.features.forEach(function (f) {
-          const p = latest[String(f.properties.id)];
-          f.properties.regular_price_cents = p ? p.price_cents : 0;
-        });
-        map.getSource('stations').setData(stationsGeoJSON);
-        priceViewFetched = true;
-        checkPriceAlert();
-      } catch (e) {
-        console.error('fetchRegularPrices error:', e);
-        showToast('Could not load prices');
-      }
-    }
-
-    function setPriceViewLayers(on) {
-      const show = on ? 'visible' : 'none';
-      const hide = on ? 'none'    : 'visible';
-      ['clusters-price', 'cluster-price-label', 'station-pins-price', 'station-pins-price-label'].forEach(function (id) {
-        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', show);
-      });
-      ['clusters', 'cluster-count', 'station-pins-border', 'station-pins'].forEach(function (id) {
-        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', hide);
-      });
-    }
-
-    function setupPriceView() {
-      const btn = document.getElementById('price-view-btn');
-      if (!btn) return;
-      btn.addEventListener('click', async function () {
-        priceViewMode = !priceViewMode;
-        btn.classList.toggle('active', priceViewMode);
-        if (priceViewMode) {
-          btn.title = 'Back to normal view';
-          showToast('Loading prices…');
-          await fetchRegularPrices();
-          setPriceViewLayers(true);
-          showToast('Showing regular gas prices');
-        } else {
-          btn.title = 'Show gas prices';
-          setPriceViewLayers(false);
-        }
-      });
-    }
-
-    function setupBrandFilter() {
-      const toggleBtn = document.getElementById('brand-filter-toggle');
-      const controls  = document.getElementById('brand-filter-controls');
-      const clearBtn  = document.getElementById('brand-clear-btn');
-      const applyBtn  = document.getElementById('brand-apply');
-      const select    = document.getElementById('brand-select');
-      const maxInput  = document.getElementById('brand-max-price');
-      const EMPTY     = ['in', ['get', 'id'], ['literal', ['__none__']]];
-
-      // Populate brand dropdown once stations are loaded
-      function populateBrands() {
-        if (!stationsGeoJSON) return;
-        const brands = [...new Set(
-          stationsGeoJSON.features.map(function (f) { return f.properties.brand || f.properties.name; }).filter(Boolean)
-        )].sort();
-        brands.forEach(function (b) {
-          const opt = document.createElement('option');
-          opt.value = b; opt.textContent = b;
-          select.appendChild(opt);
-        });
-      }
-      // Try now, retry once map loads
-      populateBrands();
-      document.addEventListener('stationsLoaded', populateBrands, { once: true });
-
-      toggleBtn.addEventListener('click', function () {
-        const open = controls.classList.toggle('open');
-        toggleBtn.textContent = open ? 'Hide brand filter' : 'Filter by brand';
-      });
-
-      clearBtn.addEventListener('click', function () {
-        clearBtn.classList.remove('visible');
-        if (map && map.getLayer('station-pins-match')) map.setFilter('station-pins-match', EMPTY);
-      });
-
-      applyBtn.addEventListener('click', function () {
-        const brand = select.value;
-        if (!brand) { showToast('Pick a brand first'); return; }
-        if (!map || !map.getLayer('station-pins-match')) { showToast('Map not ready yet'); return; }
-        const maxCents = maxInput.value ? Math.round(parseFloat(maxInput.value) * 100) : null;
-        const matchedIds = [];
-        (stationsGeoJSON?.features || []).forEach(function (f) {
-          const p = f.properties;
-          const nameMatch = (p.brand || p.name || '').toLowerCase() === brand.toLowerCase();
-          if (!nameMatch) return;
-          if (maxCents) {
-            const price = p.regular_price_cents || 0;
-            if (!price || price > maxCents) return;
-          }
-          matchedIds.push(p.id);
-        });
-        if (matchedIds.length === 0) {
-          showToast('No stations found for ' + brand + (maxCents ? ' under $' + (maxCents/100).toFixed(2) : ''));
-          return;
-        }
-        map.setFilter('station-pins-match', ['in', ['get', 'id'], ['literal', matchedIds]]);
-        clearBtn.classList.add('visible');
-        showToast(matchedIds.length + ' ' + brand + ' station' + (matchedIds.length === 1 ? '' : 's') + ' highlighted');
-      });
-    }
-
-    var priceAlertSettings = null; // { fuelType, maxCents }
-
-    function setupPriceAlert() {
-      const section    = document.getElementById('price-alert-section');
-      const fuelSel    = document.getElementById('alert-fuel-select');
-      const maxInput   = document.getElementById('alert-max-price');
-      const saveBtn    = document.getElementById('alert-save-btn');
-      const statusEl   = document.getElementById('alert-status');
-      const notifyBtn  = document.getElementById('alert-notify-btn');
-
-      // Load saved settings
-      try {
-        const saved = localStorage.getItem('gas_price_alert');
-        if (saved) {
-          priceAlertSettings = JSON.parse(saved);
-          fuelSel.value = priceAlertSettings.fuelType || 'regular';
-          maxInput.value = priceAlertSettings.maxCents ? (priceAlertSettings.maxCents / 100).toFixed(2) : '';
-          statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + maxInput.value;
-        }
-      } catch (e) {}
-
-      saveBtn.addEventListener('click', function () {
-        const max = parseFloat(maxInput.value);
-        if (isNaN(max) || max <= 0) { showToast('Enter a valid max price'); return; }
-        priceAlertSettings = { fuelType: fuelSel.value, maxCents: Math.round(max * 100) };
-        localStorage.setItem('gas_price_alert', JSON.stringify(priceAlertSettings));
-        statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + max.toFixed(2);
-        showToast('Price alert saved!');
-        checkPriceAlert();
-      });
-
-      notifyBtn.addEventListener('click', function () {
-        if (!('Notification' in window)) { showToast('Notifications not supported on this browser'); return; }
-        Notification.requestPermission().then(function (perm) {
-          if (perm === 'granted') { notifyBtn.textContent = '✓ Notifications enabled'; showToast('Notifications enabled!'); }
-          else showToast('Notifications blocked — check browser settings');
-        });
-      });
-
-      // Update notify button state
-      if ('Notification' in window && Notification.permission === 'granted') {
-        notifyBtn.textContent = '✓ Notifications enabled';
-      }
-    }
-
-    function showPriceAlertSection(show) {
-      const el = document.getElementById('price-alert-section');
-      if (el) el.classList.toggle('visible', show);
-    }
-
-    function checkPriceAlert() {
-      if (!priceAlertSettings || !stationsGeoJSON) return;
-      const { fuelType, maxCents } = priceAlertSettings;
-      const matches = stationsGeoJSON.features.filter(function (f) {
-        const price = f.properties.regular_price_cents;
-        return price && price <= maxCents;
-      });
-      if (matches.length === 0) return;
-      const best = matches.reduce(function (a, b) {
-        return (a.properties.regular_price_cents < b.properties.regular_price_cents) ? a : b;
-      });
-      const name = best.properties.name || best.properties.brand || 'A station';
-      const price = '$' + (best.properties.regular_price_cents / 100).toFixed(2);
-      const msg = name + ' has ' + fuelType + ' at ' + price;
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('⛽ Gas Alert!', { body: msg });
-      } else {
-        showToast('⛽ Alert: ' + msg);
-      }
-    }
-
-    function setupTripCost() {
-      const toggleBtn  = document.getElementById('trip-cost-toggle-btn');
-      const controls   = document.getElementById('trip-cost-controls');
-      const fromInput  = document.getElementById('trip-from');
-      const toInput    = document.getElementById('trip-to');
-      const mpgInput   = document.getElementById('trip-mpg');
-      const priceInput = document.getElementById('trip-price');
-      const calcBtn    = document.getElementById('trip-calc-btn');
-      const resultEl   = document.getElementById('trip-result');
-      const gpsBtn     = document.getElementById('trip-from-gps');
-
-      toggleBtn.addEventListener('click', function () {
-        const open = controls.classList.toggle('open');
-        resultEl.classList.remove('visible');
-        if (open) fromInput.focus();
-      });
-
-      gpsBtn.addEventListener('click', function () {
-        if (!navigator.geolocation) { showToast('GPS not available'); return; }
-        gpsBtn.textContent = '…';
-        navigator.geolocation.getCurrentPosition(
-          async function (pos) {
-            try {
-              const { latitude: lat, longitude: lon } = pos.coords;
-              const res = await fetch(
-                'https://nominatim.openstreetmap.org/reverse?' +
-                new URLSearchParams({ lat, lon, format: 'json' }),
-                { headers: { 'Referer': location.origin } }
-              );
-              const d = await res.json();
-              fromInput.value = d.display_name || (lat.toFixed(5) + ', ' + lon.toFixed(5));
-            } catch (e) {
-              fromInput.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
-            }
-            gpsBtn.textContent = '📍';
-          },
-          function () { gpsBtn.textContent = '📍'; showToast('Could not get location'); }
-        );
-      });
-
-      async function geocode(q) {
-        const res = await fetch(
-          'https://nominatim.openstreetmap.org/search?' +
-          new URLSearchParams({ q, format: 'json', limit: '1' }),
-          { headers: { 'Referer': location.origin } }
-        );
-        const data = await res.json();
-        if (!data.length) throw new Error('Address not found — try being more specific');
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      }
-
-      calcBtn.addEventListener('click', async function () {
-        const from  = fromInput.value.trim();
-        const to    = toInput.value.trim();
-        const mpg   = parseFloat(mpgInput.value);
-        const price = parseFloat(priceInput.value);
-
-        if (!from)            { showToast('Enter a departure address'); return; }
-        if (!to)              { showToast('Enter a destination'); return; }
-        if (!mpg || mpg <= 0) { showToast('Enter your car\'s MPG'); return; }
-        if (!price || price <= 0) { showToast('Enter a gas price per gallon'); return; }
-
-        calcBtn.textContent = 'Calculating…';
-        calcBtn.disabled = true;
-        resultEl.classList.remove('visible');
-
-        try {
-          const [a, b] = await Promise.all([geocode(from), geocode(to)]);
-          const osrmRes = await fetch(
-            'https://router.project-osrm.org/route/v1/driving/' +
-            a.lon + ',' + a.lat + ';' + b.lon + ',' + b.lat + '?overview=false'
-          );
-          const osrmData = await osrmRes.json();
-          if (!osrmData.routes || !osrmData.routes.length) throw new Error('No driving route found between those locations');
-
-          const distMiles  = osrmData.routes[0].distance * 0.000621371;
-          const durationS  = osrmData.routes[0].duration;
-          const gallons    = distMiles / mpg;
-          const totalCost  = gallons * price;
-          const hrs  = Math.floor(durationS / 3600);
-          const mins = Math.round((durationS % 3600) / 60);
-          const timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + ' min';
-
-          resultEl.innerHTML =
-            '<div class="trip-result-cost">$' + totalCost.toFixed(2) + '</div>' +
-            '<div class="trip-result-detail">' +
-              distMiles.toFixed(1) + ' mi &nbsp;·&nbsp; ' +
-              gallons.toFixed(2) + ' gal &nbsp;·&nbsp; ' +
-              timeStr + ' drive' +
-            '</div>';
-          resultEl.classList.add('visible');
-        } catch (e) {
-          showToast(e.message || 'Could not calculate route');
-        } finally {
-          calcBtn.textContent = 'Tell me! ⛽';
-          calcBtn.disabled = false;
-        }
-      });
-    }
-
     function boot() {
-      setLoadingProgress(10, 'Starting up…');
       initFirebase();
-      setLoadingProgress(25, 'Loading map…');
       initMap();
       setupAuthModal();
       setupDragToDismiss();
       setupForms();
       setupSearch();
-      setupTripCost();
       setupPriceFilter();
       setupHistoryPanel();
       setupAdminUserPanel();
       setupLeaderboard();
       setupCheapestNearby();
       checkAdmin();
-      setupUserProfile();
-      setupInstallBanner();
-      setupPriceView();
-      setupBrandFilter();
-      setupPriceAlert();
 
       // Backdrop tap closes whichever panel is open
       document.getElementById('panel-backdrop').addEventListener('click', closeAllPanels);

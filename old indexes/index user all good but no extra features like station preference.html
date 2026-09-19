@@ -118,80 +118,32 @@
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: var(--bg);
+      background: rgba(255,255,255,0.92);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 18px;
-      transition: opacity 0.5s ease;
+      gap: 16px;
+      transition: opacity 0.4s ease;
     }
     #loading-overlay.hidden {
       opacity: 0;
       pointer-events: none;
+      display: none;
     }
-    #loading-donut-wrap {
-      position: relative;
-      width: 150px;
-      height: 150px;
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
-    #loading-donut-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      transform: rotate(-90deg);
-    }
-    #donut-track {
-      fill: none;
-      stroke: var(--border);
-      stroke-width: 7;
-    }
-    #donut-fill {
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 7;
-      stroke-linecap: round;
-      stroke-dasharray: 289;
-      stroke-dashoffset: 289;
-      transition: stroke-dashoffset 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    #loading-donut-emojis {
-      position: absolute;
-      inset: 0;
-      animation: donut-spin 9s linear infinite;
-    }
-    .donut-emoji {
-      position: absolute;
-      font-size: 20px;
-      top: calc(50% - 12px);
-      left: calc(50% - 12px);
-      line-height: 1;
-    }
-    .donut-emoji:nth-child(1) { transform: rotate(0deg)   translateX(63px) rotate(0deg); }
-    .donut-emoji:nth-child(2) { transform: rotate(60deg)  translateX(63px) rotate(-60deg); }
-    .donut-emoji:nth-child(3) { transform: rotate(120deg) translateX(63px) rotate(-120deg); }
-    .donut-emoji:nth-child(4) { transform: rotate(180deg) translateX(63px) rotate(-180deg); }
-    .donut-emoji:nth-child(5) { transform: rotate(240deg) translateX(63px) rotate(-240deg); }
-    .donut-emoji:nth-child(6) { transform: rotate(300deg) translateX(63px) rotate(-300deg); }
-    @keyframes donut-spin { to { transform: rotate(360deg); } }
-    #loading-center-emoji {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 34px;
-      line-height: 1;
-      animation: center-pulse 2.2s ease-in-out infinite;
-    }
-    @keyframes center-pulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50%       { transform: translate(-50%, -50%) scale(1.12); }
-    }
-    #loading-text {
-      font-size: 13px;
-      color: var(--text3);
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-overlay p {
+      font-size: 15px;
+      color: var(--text2);
       font-weight: 500;
-      letter-spacing: 0.2px;
-      transition: opacity 0.2s;
     }
 
     /* ── TOAST ───────────────────────────────────────────────────── */
@@ -626,9 +578,6 @@
     .price-card.age-old    { border-color: var(--border); }
     .price-card.age-old    .fuel-price { color: var(--text3); }
     .price-card.stale .fuel-label::after { content: ' · old'; color: var(--text3); }
-    .price-card.verified { border-color: #4caf50 !important; background: #f1f8e9 !important; }
-    .price-card.verified .fuel-price { color: #2e7d32 !important; }
-    .price-card.verified .fuel-age   { color: #388e3c !important; }
 
     /* ── REPORT FORM ─────────────────────────────────────────────── */
     #report-form {
@@ -939,15 +888,14 @@
         --border: #333333;
       }
       html, body { background: #111111; }
-      #loading-overlay { background: #1a1a1a; }
+      #loading-overlay { background: rgba(18,18,18,0.94); }
       .maplibregl-ctrl-group { filter: invert(1) hue-rotate(180deg); }
     }
 
     /* ── REDUCED MOTION ──────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       #bottom-sheet, #sheet-backdrop, #toast, #loading-overlay { transition: none; }
-      #loading-donut-emojis, #loading-center-emoji { animation: none; }
-      #donut-fill { transition: none; }
+      .spinner { animation: none; border-top-color: var(--accent); }
     }
 
     /* ── AUTH MODAL ──────────────────────────────────────────────── */
@@ -1233,35 +1181,6 @@
     .history-row-meta {
       font-size: 11px;
       color: var(--text3);
-    }
-    #my-posts-list {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .my-post-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      gap: 8px;
-    }
-    .my-post-row:last-child { border-bottom: none; }
-    .my-post-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .my-post-comment {
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 1px;
-    }
-    .my-post-date {
-      font-size: 11px;
-      color: var(--text3);
-      flex-shrink: 0;
     }
 
     /* Bottom-left map buttons */
@@ -2068,124 +1987,7 @@
     .profile-badge-gold   { background: #fff8e1; color: #f9a825; border: 1px solid #ffe082; }
     .profile-badge-silver { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
     .profile-badge-bronze { background: #fbe9e7; color: #8d6e63; border: 1px solid #ffccbc; }
-    .profile-badge-hunter  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-    .profile-badge-pioneer { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
-    .profile-badge-streak  { background: #fff3e0; color: #e64a19; border: 1px solid #ffcc80; }
-
-    .thanks-btn {
-      background: none; border: none; font-family: var(--font);
-      font-size: 12px; font-weight: 600; color: var(--text2);
-      cursor: pointer; padding: 4px 8px; border-radius: 8px;
-    }
-    .thanks-btn:active { background: var(--surface2); }
-    .thanks-btn.thanked { color: #2e7d32; }
-    .thanks-btn:disabled { opacity: 0.65; cursor: default; }
-
-    /* Brand filter — mirrors price filter styling */
-    #brand-filter-section { border-top: 1px solid var(--border); }
-    #brand-filter-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-    }
-    #brand-filter-toggle {
-      background: none; border: none; font-family: var(--font);
-      font-size: 13px; font-weight: 700; color: var(--accent);
-      cursor: pointer; padding: 0;
-    }
-    #brand-filter-toggle:active { opacity: 0.7; }
-    #brand-clear-btn {
-      display: none; background: none; border: none;
-      font-family: var(--font); font-size: 12px; font-weight: 600;
-      color: var(--text3); cursor: pointer; padding: 0;
-    }
-    #brand-clear-btn.visible { display: block; }
-    #brand-clear-btn:active { color: var(--accent); }
-    #brand-filter-controls {
-      display: none; flex-direction: column; gap: 8px;
-      padding: 10px 14px 14px; border-top: 1px solid var(--border);
-    }
-    #brand-filter-controls.open { display: flex; }
-    #brand-select {
-      width: 100%; font-family: var(--font); font-size: 15px;
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 10px; padding: 8px 10px; color: var(--text);
-    }
-    #brand-max-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
-    #brand-max-price {
-      width: 80px; padding: 7px 10px; border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 14px; font-family: var(--font);
-      background: var(--surface); color: var(--text);
-    }
-    #brand-apply {
-      padding: 9px; background: var(--accent); color: #fff;
-      border: none; border-radius: 10px; font-family: var(--font);
-      font-size: 14px; font-weight: 600; cursor: pointer;
-    }
-
-    /* Trip cost calculator */
-    #trip-cost-section { border-top: 1px solid var(--border); }
-    #trip-cost-toggle-row {
-      display: flex; align-items: center; padding: 10px 14px;
-    }
-    #trip-cost-toggle-btn {
-      background: none; border: none; font-family: var(--font);
-      font-size: 13px; font-weight: 700; color: var(--accent);
-      cursor: pointer; padding: 0; text-align: left;
-    }
-    #trip-cost-controls {
-      display: none; flex-direction: column; gap: 10px;
-      padding: 0 14px 14px;
-    }
-    #trip-cost-controls.open { display: flex; }
-    .trip-label {
-      font-size: 11px; font-weight: 700; color: var(--text3);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      display: block; margin-bottom: 4px;
-    }
-    .trip-field { display: flex; flex-direction: column; }
-    .trip-loc-row { display: flex; gap: 6px; align-items: stretch; }
-    .trip-loc-row input { flex: 1; }
-    #trip-from-gps {
-      background: var(--surface2); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 0 9px; cursor: pointer; font-size: 15px;
-      color: var(--text); flex-shrink: 0;
-    }
-    .trip-inline-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    #trip-cost-controls input[type="text"],
-    #trip-cost-controls input[type="number"] {
-      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 8px 10px; font-size: 14px;
-      font-family: var(--font); color: var(--text); box-sizing: border-box;
-    }
-    #trip-calc-btn {
-      background: var(--accent); color: #fff; border: none;
-      border-radius: 10px; padding: 10px; font-family: var(--font);
-      font-size: 14px; font-weight: 700; cursor: pointer;
-    }
-    #trip-calc-btn:active { opacity: 0.85; }
-    #trip-calc-btn:disabled { opacity: 0.6; cursor: default; }
-    #trip-result {
-      background: var(--surface2); border-radius: 10px; padding: 12px 14px;
-      display: none; text-align: center;
-    }
-    #trip-result.visible { display: block; }
-    .trip-result-cost {
-      font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 6px;
-    }
-    .trip-result-detail {
-      font-size: 12px; color: var(--text3); line-height: 1.8;
-    }
-
-    /* Price alert */
-    #price-alert-section { border-top: 1px solid var(--border); padding: 14px 16px; display: none; }
-    #price-alert-section.visible { display: block; }
-    #price-alert-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text2); margin-bottom: 10px; }
-    #price-alert-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    #alert-fuel-select, #alert-max-price { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font); font-size: 13px; color: var(--text); }
-    #alert-max-price { width: 80px; }
-    #alert-save-btn { padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
-    #alert-notify-btn { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: none; font-family: var(--font); font-size: 12px; color: var(--text2); cursor: pointer; }
-    #alert-status { font-size: 12px; color: var(--text3); margin-top: 6px; }
+    .profile-badge-hunter { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
     #user-profile-feed {
       overflow-y: auto;
       flex: 1;
@@ -2314,7 +2116,7 @@
       <div style="display:flex;align-items:center;gap:12px">
         <div id="history-avatar" class="avatar-circle" style="width:40px;height:40px;font-size:20px;flex-shrink:0"></div>
         <div>
-          <h2 id="history-title">My Fills</h2>
+          <h2 id="history-title">My Reports</h2>
           <div class="history-subtitle" id="history-subtitle"></div>
         </div>
       </div>
@@ -2367,7 +2169,6 @@
     <div id="leaderboard-tabs">
       <button class="lb-tab active" data-tab="contributors">Top Contributors</button>
       <button class="lb-tab" data-tab="hunters">Price Hunters</button>
-      <button class="lb-tab" data-tab="best-prices">Best Prices</button>
     </div>
     <div id="leaderboard-feed"></div>
   </div>
@@ -2376,7 +2177,7 @@
   <div id="admin-user-panel" role="dialog" aria-modal="true">
     <div id="admin-user-header">
       <div>
-        <h2 id="admin-user-title">User Fills</h2>
+        <h2 id="admin-user-title">User Reports</h2>
         <div class="admin-user-subtitle" id="admin-user-subtitle"></div>
       </div>
       <button id="admin-user-close" aria-label="Close">×</button>
@@ -2398,22 +2199,8 @@
 
   <!-- Loading overlay -->
   <div id="loading-overlay">
-    <div id="loading-donut-wrap">
-      <svg id="loading-donut-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-        <circle id="donut-track" cx="60" cy="60" r="46"/>
-        <circle id="donut-fill"  cx="60" cy="60" r="46"/>
-      </svg>
-      <div id="loading-donut-emojis">
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💰</span>
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💵</span>
-        <span class="donut-emoji">⛽</span>
-        <span class="donut-emoji">💲</span>
-      </div>
-      <div id="loading-center-emoji">🤑</div>
-    </div>
-    <p id="loading-text">Starting up…</p>
+    <div class="spinner"></div>
+    <p id="loading-text">Finding gas stations…</p>
   </div>
 
   <!-- Toast notification -->
@@ -2451,22 +2238,6 @@
       </div>
       <button class="panel-close-btn" id="user-profile-close" aria-label="Close">×</button>
     </div>
-    <div id="price-alert-section">
-      <div id="price-alert-title">🔔 Price Alert</div>
-      <div id="price-alert-row">
-        <select id="alert-fuel-select">
-          <option value="regular">Regular</option>
-          <option value="mid">Mid-Grade</option>
-          <option value="premium">Premium</option>
-          <option value="diesel">Diesel</option>
-        </select>
-        <span>under $</span>
-        <input id="alert-max-price" type="number" placeholder="5.50" step="0.10" min="1" max="9.99" inputmode="decimal" />
-        <button id="alert-save-btn">Save</button>
-      </div>
-      <div id="alert-status"></div>
-      <button id="alert-notify-btn">Enable notifications</button>
-    </div>
     <div id="user-profile-feed"></div>
   </div>
 
@@ -2491,7 +2262,7 @@
   </div>
 
   <!-- Profile / history button -->
-  <button id="profile-btn" aria-label="My fills">
+  <button id="profile-btn" aria-label="My reports">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -2561,50 +2332,6 @@
         </div>
         <button id="filter-apply-btn">Apply</button>
       </div>
-      <div id="brand-filter-section">
-        <div id="brand-filter-row">
-          <button id="brand-filter-toggle">Filter by brand</button>
-          <button id="brand-clear-btn">× Clear</button>
-        </div>
-        <div id="brand-filter-controls">
-          <select id="brand-select"><option value="">Select brand…</option></select>
-          <div id="brand-max-row">
-            <span>Max price (optional):</span>
-            <span>$</span><input id="brand-max-price" type="number" placeholder="6.00" step="0.10" min="1" max="9.99" inputmode="decimal" />
-          </div>
-          <button id="brand-apply">Show on map</button>
-        </div>
-      </div>
-      <div id="trip-cost-section">
-        <div id="trip-cost-toggle-row">
-          <button id="trip-cost-toggle-btn">🚗 How much $ will this trip cost?</button>
-        </div>
-        <div id="trip-cost-controls">
-          <div class="trip-field">
-            <label class="trip-label">From</label>
-            <div class="trip-loc-row">
-              <input id="trip-from" type="text" placeholder="Departure address…" autocomplete="off" />
-              <button id="trip-from-gps" title="Use my location">📍</button>
-            </div>
-          </div>
-          <div class="trip-field">
-            <label class="trip-label">To</label>
-            <input id="trip-to" type="text" placeholder="Destination address…" autocomplete="off" />
-          </div>
-          <div class="trip-inline-row">
-            <div class="trip-field">
-              <label class="trip-label">MPG</label>
-              <input id="trip-mpg" type="number" placeholder="28" min="1" max="300" inputmode="decimal" />
-            </div>
-            <div class="trip-field">
-              <label class="trip-label">$/gal</label>
-              <input id="trip-price" type="number" placeholder="4.50" step="0.01" min="0.01" inputmode="decimal" />
-            </div>
-          </div>
-          <button id="trip-calc-btn">Tell me! ⛽</button>
-          <div id="trip-result"></div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -2640,22 +2367,22 @@
         <div class="price-card" id="card-regular">
           <div class="fuel-label">Regular</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-mid">
           <div class="fuel-label">Mid-Grade</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-premium">
           <div class="fuel-label">Premium</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
         <div class="price-card" id="card-diesel">
           <div class="fuel-label">Diesel</div>
           <div class="fuel-price">—</div>
-          <div class="fuel-age">No fills</div>
+          <div class="fuel-age">No reports</div>
         </div>
       </div>
 
@@ -2667,7 +2394,7 @@
       </div>
 
       <!-- Reports feed -->
-      <p class="section-title">Fills</p>
+      <p class="section-title">Reports</p>
       <div id="reports-list"></div>
 
       <!-- My posts at this station -->
@@ -2677,7 +2404,7 @@
       </div>
 
       <!-- Unified post form -->
-      <p class="section-title">Post a Fill</p>
+      <p class="section-title">Post a Report</p>
       <form id="post-form" novalidate>
         <!-- Honeypot -->
         <input class="hp-field" name="website" type="text" tabindex="-1" autocomplete="off" />
@@ -2700,7 +2427,7 @@
                   maxlength="280" rows="3"></textarea>
         <p id="post-char-count">280</p>
 
-        <button type="submit" class="btn-primary" id="post-submit">Post Fill</button>
+        <button type="submit" class="btn-primary" id="post-submit">Post Report</button>
       </form>
 
     </div><!-- end #sheet-body -->
@@ -3068,7 +2795,7 @@ out center tags;`.trim();
         geolocate.trigger();
       });
 
-      map.on('load', function () { setLoadingProgress(45, 'Map ready…'); onMapLoad(); });
+      map.on('load', onMapLoad);
       map.on('error', function (e) {
         console.error('Map error:', e);
         // Tile errors are non-fatal; only hide loading if map itself failed to init
@@ -3118,13 +2845,11 @@ out center tags;`.trim();
       // Request GPS
       requestGPS();
 
-      setLoadingProgress(60, 'Finding gas stations…');
+      setLoadingText('Finding gas stations…');
       try {
         const geojson = await loadStations();
         stationsGeoJSON = geojson;
-        setLoadingProgress(90, 'Placing pins…');
         addStationsToMap(geojson);
-        document.dispatchEvent(new Event('stationsLoaded'));
       } catch (e) {
         console.error('Failed to load stations:', e);
         showToast('Could not load stations. Try refreshing.');
@@ -3174,7 +2899,7 @@ out center tags;`.trim();
 
       // Fetch from Overpass
       try {
-        setLoadingProgress(70, 'Fetching station data…');
+        setLoadingText('Loading gas stations…');
         const geojson = await fetchFromOverpass();
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data: geojson, timestamp: Date.now() }));
@@ -3186,7 +2911,7 @@ out center tags;`.trim();
       }
 
       // Fallback to static file
-      setLoadingProgress(70, 'Loading stations…');
+      setLoadingText('Loading stations…');
       const res = await fetch('./stations.geojson');
       if (!res.ok) throw new Error('Static fallback not found');
       const geojson = await res.json();
@@ -3395,7 +3120,7 @@ out center tags;`.trim();
               ['to-string', ['floor', ['/', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 100], 10]]],
               ['to-string', ['%', ['round', ['/', ['get', 'price_sum'], ['get', 'price_count']]], 10]]
             ],
-            '?'
+            ''
           ]
         },
         paint: { 'text-color': '#ffffff' }
@@ -3519,7 +3244,7 @@ out center tags;`.trim();
       const card = document.getElementById('card-' + fuelType);
       card.classList.remove('has-data', 'stale');
       card.querySelector('.fuel-price').textContent = '—';
-      card.querySelector('.fuel-age').textContent   = 'No fills';
+      card.querySelector('.fuel-age').textContent   = 'No reports';
     }
 
     // ── DRAG TO DISMISS ───────────────────────────────────────────────
@@ -3634,7 +3359,7 @@ out center tags;`.trim();
         });
 
         if (snap.empty) {
-          list.innerHTML = '<p class="no-data-msg">No fills yet. Be the first!</p>';
+          list.innerHTML = '<p class="no-data-msg">No reports yet. Be the first!</p>';
           return;
         }
 
@@ -3675,7 +3400,7 @@ out center tags;`.trim();
 
       } catch (e) {
         console.error('Firestore error:', e);
-        list.innerHTML = '<p class="no-data-msg">Could not load fills.</p>';
+        list.innerHTML = '<p class="no-data-msg">Could not load reports.</p>';
       }
     }
 
@@ -3685,7 +3410,7 @@ out center tags;`.trim();
       if (!report) {
         card.classList.remove('age-fresh', 'age-medium', 'age-old', 'stale', 'has-data');
         card.querySelector('.fuel-price').textContent = '—';
-        card.querySelector('.fuel-age').textContent   = 'No fills';
+        card.querySelector('.fuel-age').textContent   = 'No reports';
         return;
       }
       const dollars = (report.price_cents / 100).toFixed(2);
@@ -3748,15 +3473,15 @@ out center tags;`.trim();
 
       // Actions row
       const confirmCount = report.confirm_count || 0;
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const todayKey = currentDeviceId ? currentDeviceId + '_' + todayStr : null;
-      const alreadyConfirmed = !!(todayKey &&
-        (report.confirmed_by || []).includes(todayKey));
+      const alreadyConfirmed = currentDeviceId &&
+        (report.confirmed_by || []).includes(currentDeviceId);
       const alreadyFlagged = currentDeviceId &&
         (report.flagged_by || []).includes(currentDeviceId);
 
       inner += '<div class="report-meta">' +
-        '<button class="thanks-btn' + (alreadyConfirmed ? ' thanked' : '') + '" data-report-id="' + report.id + '"' + (alreadyConfirmed ? ' disabled' : '') + '>' + (alreadyConfirmed ? '✓' : '👍') + (confirmCount ? ' ' + confirmCount : '') + (alreadyConfirmed ? ' Confirmed today' : ' Still accurate') + '</button>' +
+        '<button class="confirm-btn' + (alreadyConfirmed ? ' confirmed' : '') + '" data-report-id="' + report.id + '">' +
+          '✓ <span class="confirm-count">' + (confirmCount || '') + '</span> Still accurate' +
+        '</button>' +
         '<button class="reply-btn" data-report-id="' + report.id + '">Reply</button>' +
         '<button class="flag-btn" title="Flag wrong price" data-report-id="' + report.id + '">' + (alreadyFlagged ? '🚩' : '⚑') + '</button>' +
         (isAdmin ? '<button class="report-admin-delete" data-report-id="' + report.id + '" title="Admin: delete">🗑</button>' : '') +
@@ -3841,52 +3566,23 @@ out center tags;`.trim();
       });
 
       // Wire confirm "Still accurate" button
-      // Wire merged 👍 Still accurate button (toggleable)
-      card.querySelector('.thanks-btn').addEventListener('click', async function () {
-        if (!db || !currentDeviceId) { showToast('Sign in first'); return; }
-        if (this.disabled) return;
-
-        const btn = this;
-        const todayKey = currentDeviceId + '_' + new Date().toISOString().slice(0, 10);
-        const ref = db.collection('station_reports').doc(stationId).collection('reports').doc(report.id);
-        const currentCount = parseInt(btn.textContent.match(/\d+/)?.[0] || '0');
-        const newCount = currentCount + 1;
-
-        // Optimistic UI update
-        btn.classList.add('thanked');
-        btn.disabled = true;
-        btn.textContent = '✓' + ' ' + newCount + ' Confirmed today';
-
-        // Update the price card for this fuel type
-        if (report.fuel_type) {
-          const priceCard = document.getElementById('card-' + report.fuel_type);
-          if (priceCard && priceCard.classList.contains('has-data')) {
-            const ageEl = priceCard.querySelector('.fuel-age');
-            priceCard.classList.add('verified');
-            if (ageEl && !ageEl.dataset.origText) ageEl.dataset.origText = ageEl.textContent;
-            if (ageEl) ageEl.textContent = '✓ Verified today';
-          }
-        }
-
+      card.querySelector('.confirm-btn').addEventListener('click', async function () {
+        if (alreadyConfirmed) return;
+        if (!db || !currentDeviceId) { showToast('Sign in to confirm'); return; }
+        this.classList.add('confirmed');
+        this.disabled = true;
         try {
-          await ref.update({
+          await db.collection('station_reports').doc(stationId).collection('reports').doc(report.id).update({
             confirm_count: firebase.firestore.FieldValue.increment(1),
-            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(todayKey)
+            confirmed_by:  firebase.firestore.FieldValue.arrayUnion(currentDeviceId)
           });
+          const countEl = this.querySelector('.confirm-count');
+          countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
+          showToast('Marked as still accurate!');
         } catch (e) {
-          // Revert on failure
-          btn.classList.remove('thanked');
-          btn.disabled = false;
-          btn.textContent = '👍' + (currentCount ? ' ' + currentCount : '') + ' Still accurate';
-          if (report.fuel_type) {
-            const priceCard = document.getElementById('card-' + report.fuel_type);
-            if (priceCard) {
-              priceCard.classList.remove('verified');
-              const ageEl = priceCard.querySelector('.fuel-age');
-              if (ageEl && ageEl.dataset.origText) { ageEl.textContent = ageEl.dataset.origText; delete ageEl.dataset.origText; }
-            }
-          }
-          showToast('Could not save — try again');
+          console.error(e);
+          this.classList.remove('confirmed');
+          this.disabled = false;
         }
       });
 
@@ -4053,27 +3749,17 @@ out center tags;`.trim();
         btn.textContent = 'Posting…';
 
         try {
-          // Check if this station has any reports yet (pioneer detection)
-          const existingSnap = await db.collection('station_reports').doc(currentStationId).collection('reports').limit(1).get();
-          const isFirstReport = existingSnap.empty;
-
           const reportData = {
-            fuel_type:        hasPrice ? fuelType : null,
-            price_cents:      hasPrice ? Math.round(priceVal * 100) : null,
-            comment:          hasComment ? comment : null,
-            reply_count:      0,
-            username:         currentUsername || 'Anonymous',
-            device_id:        currentDeviceId || null,
-            station_id:       currentStationId,
-            is_first_report:  isFirstReport,
-            created_at:       firebase.firestore.FieldValue.serverTimestamp()
+            fuel_type:   hasPrice ? fuelType : null,
+            price_cents: hasPrice ? Math.round(priceVal * 100) : null,
+            comment:     hasComment ? comment : null,
+            reply_count: 0,
+            username:    currentUsername || 'Anonymous',
+            device_id:   currentDeviceId || null,
+            station_id:  currentStationId,
+            created_at:  firebase.firestore.FieldValue.serverTimestamp()
           };
           await db.collection('station_reports').doc(currentStationId).collection('reports').add(reportData);
-          if (isFirstReport && currentUsername) {
-            await db.collection('usernames').doc(currentUsername).update({
-              pioneer_count: firebase.firestore.FieldValue.increment(1)
-            });
-          }
 
           // Mirror to user_activity for fast profile queries (no index needed)
           if (currentUsername) {
@@ -4081,15 +3767,13 @@ out center tags;`.trim();
           }
 
           setRateLimit(currentStationId, 'report');
-          if (isFirstReport) {
-            showToast('🌟 First report on this station — Pioneer badge earned!');
-          } else if (hasPrice) {
+          if (hasPrice) {
             const prevCents = currentPrices[fuelType] || null;
             const newCents  = Math.round(priceVal * 100);
             if (prevCents && newCents > prevCents) showSad();
             else showNice();
           } else {
-            showToast('Fill posted — thanks!');
+            showToast('Report posted — thanks!');
           }
 
           // Reset form
@@ -4105,7 +3789,7 @@ out center tags;`.trim();
           showToast('Failed to post. Try again.');
         } finally {
           btn.disabled = false;
-          btn.textContent = 'Post Fill';
+          btn.textContent = 'Post Report';
         }
       });
     }
@@ -4202,18 +3886,12 @@ out center tags;`.trim();
       setTimeout(function () { el.classList.remove('show'); }, duration || 2800);
     }
 
-    function setLoadingProgress(pct, msg) {
-      const fill = document.getElementById('donut-fill');
-      const text = document.getElementById('loading-text');
-      if (fill) fill.style.strokeDashoffset = 289 * (1 - pct / 100);
-      if (msg && text) text.textContent = msg;
+    function setLoadingText(msg) {
+      document.getElementById('loading-text').textContent = msg;
     }
 
     function hideLoading() {
-      setLoadingProgress(100, 'Ready!');
-      setTimeout(function () {
-        document.getElementById('loading-overlay').classList.add('hidden');
-      }, 350);
+      document.getElementById('loading-overlay').classList.add('hidden');
     }
 
     // ── ADMIN ─────────────────────────────────────────────────────────
@@ -4248,7 +3926,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
           return;
         }
 
@@ -4261,7 +3939,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        countEl.textContent = docs.length + ' fills';
+        countEl.textContent = docs.length + ' reports';
         feed.innerHTML = '';
 
         docs.forEach(function (doc) {
@@ -4308,7 +3986,7 @@ out center tags;`.trim();
               await doc.ref.delete();
               row.remove();
               const remaining = feed.querySelectorAll('.admin-row').length;
-              countEl.textContent = remaining + ' fills';
+              countEl.textContent = remaining + ' reports';
               showToast('Report deleted');
             } catch (err) {
               showToast('Delete failed: ' + err.message);
@@ -4732,19 +4410,16 @@ out center tags;`.trim();
         list.innerHTML = '';
         docs.forEach(function (doc) {
           const d = doc.data();
+          const parts = [];
+          if (d.fuel_type && d.price_cents) parts.push((fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2));
+          if (d.comment) parts.push('"' + escapeHTML(d.comment) + '"');
           const date = d.created_at ? d.created_at.toDate() : new Date();
-          const priceLabel = (d.fuel_type && d.price_cents)
-            ? (fuelLabel[d.fuel_type] || d.fuel_type) + ' $' + (d.price_cents / 100).toFixed(2)
-            : '';
           const item = document.createElement('div');
-          item.className = 'my-post-row';
+          item.className = 'history-row';
+          item.style.cursor = 'default';
           item.innerHTML =
-            '<div>' +
-              (priceLabel ? '<div class="my-post-label">' + escapeHTML(priceLabel) + '</div>' : '') +
-              (d.comment ? '<div class="my-post-comment">"' + escapeHTML(d.comment) + '"</div>' : '') +
-              (!priceLabel && !d.comment ? '<div class="my-post-label" style="color:var(--text3)">(no content)</div>' : '') +
-            '</div>' +
-            '<div class="my-post-date">' + timeAgo(date) + '</div>';
+            '<div class="history-row-body">' + (parts.join(' · ') || '(empty)') + '</div>' +
+            '<div class="history-row-meta">' + date.toLocaleString() + '</div>';
           list.appendChild(item);
         });
         section.style.display = 'block';
@@ -4760,7 +4435,7 @@ out center tags;`.trim();
       const title    = document.getElementById('history-title');
       const subtitle = document.getElementById('history-subtitle');
 
-      title.textContent    = currentUsername ? currentUsername + "'s fills" : 'My fills';
+      title.textContent    = currentUsername ? currentUsername + "'s Reports" : 'My Reports';
       subtitle.textContent = '';
       feed.innerHTML       = '<p class="no-data-msg">Loading…</p>';
       const histAvatar = document.getElementById('history-avatar');
@@ -4776,7 +4451,7 @@ out center tags;`.trim();
       document.getElementById('panel-backdrop').classList.add('visible');
 
       if (!db || !currentDeviceId) {
-        feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
+        feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
         return;
       }
 
@@ -4795,7 +4470,7 @@ out center tags;`.trim();
         });
 
         if (docs.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet — tap a station and post one!</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports yet — tap a station and post one!</p>';
           return;
         }
 
@@ -4805,7 +4480,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -4901,7 +4576,7 @@ out center tags;`.trim();
           .get();
 
         if (snap.empty) {
-          feed.innerHTML = '<p class="no-data-msg">No fills from this user.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports from this user.</p>';
           return;
         }
 
@@ -4913,7 +4588,7 @@ out center tags;`.trim();
           return tb - ta;
         });
 
-        subtitle.textContent = docs.length + ' fill' + (docs.length === 1 ? '' : 's');
+        subtitle.textContent = docs.length + ' report' + (docs.length === 1 ? '' : 's');
         feed.innerHTML = '';
 
         const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
@@ -5085,7 +4760,7 @@ out center tags;`.trim();
           });
           const sorted = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20);
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No fills yet — be the first!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No reports yet — be the first!</p>';
             return;
           }
           await fetchAvatarBatch(sorted.map(function (e) { return e[0]; }));
@@ -5110,96 +4785,6 @@ out center tags;`.trim();
           });
         } catch (e) {
           feed.innerHTML = '<p class="no-data-msg">Could not load leaderboard.</p>';
-        }
-
-      } else if (tab === 'best-prices') {
-        // ── BEST PRICES ───────────────────────────────────────────────
-        title.textContent = 'Best Prices';
-        subtitle.textContent = 'Cheapest gas in LA right now';
-        try {
-          const snap = await db.collectionGroup('reports').limit(500).get();
-          const fuelLabel = { regular: 'Regular', mid: 'Mid-Grade', premium: 'Premium', diesel: 'Diesel' };
-
-          // Most recent price per station (any fuel type)
-          const best = {}; // { stationId: { price_cents, fuel_type, created_at } }
-          snap.forEach(function (doc) {
-            if (doc.ref.parent.parent.parent.id !== 'station_reports') return;
-            const d = doc.data();
-            if (!d.price_cents || !d.fuel_type) return;
-            const stationId = doc.ref.parent.parent.id;
-            const ts = d.created_at ? d.created_at.toDate() : null;
-            if (!best[stationId] || d.price_cents < best[stationId].price_cents) {
-              best[stationId] = { price_cents: d.price_cents, fuel_type: d.fuel_type, created_at: ts, stationId: stationId };
-            }
-          });
-
-          const sorted = Object.values(best)
-            .sort(function (a, b) { return a.price_cents - b.price_cents; })
-            .slice(0, 5);
-
-          if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No prices reported yet — be the first!</p>';
-            return;
-          }
-
-          subtitle.textContent = sorted.length + ' cheapest stations';
-          feed.innerHTML = '';
-          sorted.forEach(function (info, i) {
-            const rank = i + 1;
-            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
-            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
-            const price = '$' + (info.price_cents / 100).toFixed(2);
-            const fuel = fuelLabel[info.fuel_type] || info.fuel_type;
-            const ago = info.created_at ? timeAgo(info.created_at) : 'unknown';
-
-            // Look up station name + brand from GeoJSON
-            let stationName = info.stationId;
-            let stationBrand = '';
-            let coords = null;
-            if (stationsGeoJSON) {
-              const feat = stationsGeoJSON.features.find(function (f) {
-                return String(f.properties.id) === String(info.stationId);
-              });
-              if (feat) {
-                stationName = feat.properties.name || feat.properties.brand || info.stationId;
-                stationBrand = feat.properties.brand || '';
-                coords = feat.geometry.coordinates;
-              }
-            }
-
-            const row = document.createElement('div');
-            row.className = 'leaderboard-row';
-            row.style.cursor = 'pointer';
-            row.innerHTML =
-              '<div class="leaderboard-rank ' + rankClass + '" style="font-size:18px">' + medal + '</div>' +
-              '<div class="leaderboard-name" style="flex:1;min-width:0">' +
-                '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHTML(stationName) + '</div>' +
-                '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + (stationBrand ? escapeHTML(stationBrand) + ' · ' : '') + ago + '</div>' +
-              '</div>' +
-              '<div style="text-align:right;flex-shrink:0">' +
-                '<div style="font-weight:800;font-size:18px;color:#2e7d32">' + price + '</div>' +
-                '<div style="font-size:11px;color:var(--text3)">' + fuel + '</div>' +
-              '</div>';
-            row.addEventListener('click', function () {
-              document.getElementById('leaderboard-panel').classList.remove('open');
-              document.getElementById('panel-backdrop').classList.remove('visible');
-              if (coords) {
-                map.flyTo({ center: coords, zoom: 16, duration: 800 });
-              }
-              // Open bottom sheet for this station
-              if (stationsGeoJSON) {
-                const feat = stationsGeoJSON.features.find(function (f) {
-                  return String(f.properties.id) === String(info.stationId);
-                });
-                if (feat) {
-                  setTimeout(function () { openSheet(feat.properties); }, coords ? 900 : 0);
-                }
-              }
-            });
-            feed.appendChild(row);
-          });
-        } catch (e) {
-          feed.innerHTML = '<p class="no-data-msg">Could not load best prices.</p>';
         }
 
       } else {
@@ -5229,7 +4814,7 @@ out center tags;`.trim();
             .slice(0, 20);
 
           if (sorted.length === 0) {
-            feed.innerHTML = '<p class="no-data-msg">No price fills in the last 30 days yet!</p>';
+            feed.innerHTML = '<p class="no-data-msg">No price reports in the last 30 days yet!</p>';
             return;
           }
 
@@ -5515,7 +5100,6 @@ out center tags;`.trim();
       // Show edit hint only on own profile — clear onclick for others
       if (uploadHint) uploadHint.style.display = isOwnProfile ? 'flex' : 'none';
       avatarEl.onclick = isOwnProfile ? openEmojiPicker : null;
-      showPriceAlertSection(isOwnProfile);
 
       // Open panel
       closeAllPanels();
@@ -5584,37 +5168,14 @@ out center tags;`.trim();
             const label = priceRank === 1 ? 'Price Hunter' : '#' + priceRank + ' Price Hunter';
             badgesEl.innerHTML += '<span class="profile-badge profile-badge-hunter">' + medal + ' ' + label + '</span>';
           }
-          // Pioneer badge
-          const pioneerCount = reports.filter(function (r) { return r.is_first_report; }).length;
-          if (pioneerCount > 0) {
-            badgesEl.innerHTML += '<span class="profile-badge profile-badge-pioneer">🌟 Pioneer' + (pioneerCount > 1 ? ' ×' + pioneerCount : '') + '</span>';
-          }
-          // Streak badge
-          const DAY_MS = 86400000;
-          const todayMs = new Date().setHours(0,0,0,0);
-          const uniqueDays = [...new Set(reports.map(function (r) {
-            const d = r.created_at?.toDate?.();
-            return d ? new Date(d).setHours(0,0,0,0) : null;
-          }).filter(Boolean))].sort(function (a, b) { return b - a; });
-          let streak = 0;
-          if (uniqueDays.length && (uniqueDays[0] === todayMs || uniqueDays[0] === todayMs - DAY_MS)) {
-            streak = 1;
-            for (var i = 1; i < uniqueDays.length; i++) {
-              if (uniqueDays[i-1] - uniqueDays[i] === DAY_MS) streak++;
-              else break;
-            }
-          }
-          if (streak >= 2) {
-            badgesEl.innerHTML += '<span class="profile-badge profile-badge-streak">🔥 ' + streak + '-day streak</span>';
-          }
         }
 
         const priceCount = reports.filter(function (r) { return r.price_cents; }).length;
-        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' fill' + (priceCount !== 1 ? 's' : '') + ' logged';
+        metaEl.textContent = (joinText ? joinText + ' · ' : '') + priceCount + ' price' + (priceCount !== 1 ? 's' : '') + ' logged';
 
         feed.innerHTML = '';
         if (reports.length === 0) {
-          feed.innerHTML = '<p class="no-data-msg">No fills yet.</p>';
+          feed.innerHTML = '<p class="no-data-msg">No reports yet.</p>';
           return;
         }
 
@@ -5668,10 +5229,7 @@ out center tags;`.trim();
       '🌻','🌹','🍄','🌾','🎋','🪴','🌳','🍃',
       // sky, space & weather
       '⭐','🌟','💫','✨','🌙','🌛','🌕','☀️',
-      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍',
-      // fruits
-      '🍎','🍊','🍋','🍅','🍓','🍒','🍍','🥝',
-      '🍌','🍉','🫐','🥭','🍈','🍐','🍏','🥥'
+      '🌈','⚡','🔥','🚀','🪐','🌌','🌠','🌍'
     ];
 
     var PROFILE_BTN_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -5860,7 +5418,6 @@ out center tags;`.trim();
         });
         map.getSource('stations').setData(stationsGeoJSON);
         priceViewFetched = true;
-        checkPriceAlert();
       } catch (e) {
         console.error('fetchRegularPrices error:', e);
         showToast('Could not load prices');
@@ -5897,248 +5454,13 @@ out center tags;`.trim();
       });
     }
 
-    function setupBrandFilter() {
-      const toggleBtn = document.getElementById('brand-filter-toggle');
-      const controls  = document.getElementById('brand-filter-controls');
-      const clearBtn  = document.getElementById('brand-clear-btn');
-      const applyBtn  = document.getElementById('brand-apply');
-      const select    = document.getElementById('brand-select');
-      const maxInput  = document.getElementById('brand-max-price');
-      const EMPTY     = ['in', ['get', 'id'], ['literal', ['__none__']]];
-
-      // Populate brand dropdown once stations are loaded
-      function populateBrands() {
-        if (!stationsGeoJSON) return;
-        const brands = [...new Set(
-          stationsGeoJSON.features.map(function (f) { return f.properties.brand || f.properties.name; }).filter(Boolean)
-        )].sort();
-        brands.forEach(function (b) {
-          const opt = document.createElement('option');
-          opt.value = b; opt.textContent = b;
-          select.appendChild(opt);
-        });
-      }
-      // Try now, retry once map loads
-      populateBrands();
-      document.addEventListener('stationsLoaded', populateBrands, { once: true });
-
-      toggleBtn.addEventListener('click', function () {
-        const open = controls.classList.toggle('open');
-        toggleBtn.textContent = open ? 'Hide brand filter' : 'Filter by brand';
-      });
-
-      clearBtn.addEventListener('click', function () {
-        clearBtn.classList.remove('visible');
-        if (map && map.getLayer('station-pins-match')) map.setFilter('station-pins-match', EMPTY);
-      });
-
-      applyBtn.addEventListener('click', function () {
-        const brand = select.value;
-        if (!brand) { showToast('Pick a brand first'); return; }
-        if (!map || !map.getLayer('station-pins-match')) { showToast('Map not ready yet'); return; }
-        const maxCents = maxInput.value ? Math.round(parseFloat(maxInput.value) * 100) : null;
-        const matchedIds = [];
-        (stationsGeoJSON?.features || []).forEach(function (f) {
-          const p = f.properties;
-          const nameMatch = (p.brand || p.name || '').toLowerCase() === brand.toLowerCase();
-          if (!nameMatch) return;
-          if (maxCents) {
-            const price = p.regular_price_cents || 0;
-            if (!price || price > maxCents) return;
-          }
-          matchedIds.push(p.id);
-        });
-        if (matchedIds.length === 0) {
-          showToast('No stations found for ' + brand + (maxCents ? ' under $' + (maxCents/100).toFixed(2) : ''));
-          return;
-        }
-        map.setFilter('station-pins-match', ['in', ['get', 'id'], ['literal', matchedIds]]);
-        clearBtn.classList.add('visible');
-        showToast(matchedIds.length + ' ' + brand + ' station' + (matchedIds.length === 1 ? '' : 's') + ' highlighted');
-      });
-    }
-
-    var priceAlertSettings = null; // { fuelType, maxCents }
-
-    function setupPriceAlert() {
-      const section    = document.getElementById('price-alert-section');
-      const fuelSel    = document.getElementById('alert-fuel-select');
-      const maxInput   = document.getElementById('alert-max-price');
-      const saveBtn    = document.getElementById('alert-save-btn');
-      const statusEl   = document.getElementById('alert-status');
-      const notifyBtn  = document.getElementById('alert-notify-btn');
-
-      // Load saved settings
-      try {
-        const saved = localStorage.getItem('gas_price_alert');
-        if (saved) {
-          priceAlertSettings = JSON.parse(saved);
-          fuelSel.value = priceAlertSettings.fuelType || 'regular';
-          maxInput.value = priceAlertSettings.maxCents ? (priceAlertSettings.maxCents / 100).toFixed(2) : '';
-          statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + maxInput.value;
-        }
-      } catch (e) {}
-
-      saveBtn.addEventListener('click', function () {
-        const max = parseFloat(maxInput.value);
-        if (isNaN(max) || max <= 0) { showToast('Enter a valid max price'); return; }
-        priceAlertSettings = { fuelType: fuelSel.value, maxCents: Math.round(max * 100) };
-        localStorage.setItem('gas_price_alert', JSON.stringify(priceAlertSettings));
-        statusEl.textContent = 'Alert active: ' + fuelSel.options[fuelSel.selectedIndex].text + ' under $' + max.toFixed(2);
-        showToast('Price alert saved!');
-        checkPriceAlert();
-      });
-
-      notifyBtn.addEventListener('click', function () {
-        if (!('Notification' in window)) { showToast('Notifications not supported on this browser'); return; }
-        Notification.requestPermission().then(function (perm) {
-          if (perm === 'granted') { notifyBtn.textContent = '✓ Notifications enabled'; showToast('Notifications enabled!'); }
-          else showToast('Notifications blocked — check browser settings');
-        });
-      });
-
-      // Update notify button state
-      if ('Notification' in window && Notification.permission === 'granted') {
-        notifyBtn.textContent = '✓ Notifications enabled';
-      }
-    }
-
-    function showPriceAlertSection(show) {
-      const el = document.getElementById('price-alert-section');
-      if (el) el.classList.toggle('visible', show);
-    }
-
-    function checkPriceAlert() {
-      if (!priceAlertSettings || !stationsGeoJSON) return;
-      const { fuelType, maxCents } = priceAlertSettings;
-      const matches = stationsGeoJSON.features.filter(function (f) {
-        const price = f.properties.regular_price_cents;
-        return price && price <= maxCents;
-      });
-      if (matches.length === 0) return;
-      const best = matches.reduce(function (a, b) {
-        return (a.properties.regular_price_cents < b.properties.regular_price_cents) ? a : b;
-      });
-      const name = best.properties.name || best.properties.brand || 'A station';
-      const price = '$' + (best.properties.regular_price_cents / 100).toFixed(2);
-      const msg = name + ' has ' + fuelType + ' at ' + price;
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('⛽ Gas Alert!', { body: msg });
-      } else {
-        showToast('⛽ Alert: ' + msg);
-      }
-    }
-
-    function setupTripCost() {
-      const toggleBtn  = document.getElementById('trip-cost-toggle-btn');
-      const controls   = document.getElementById('trip-cost-controls');
-      const fromInput  = document.getElementById('trip-from');
-      const toInput    = document.getElementById('trip-to');
-      const mpgInput   = document.getElementById('trip-mpg');
-      const priceInput = document.getElementById('trip-price');
-      const calcBtn    = document.getElementById('trip-calc-btn');
-      const resultEl   = document.getElementById('trip-result');
-      const gpsBtn     = document.getElementById('trip-from-gps');
-
-      toggleBtn.addEventListener('click', function () {
-        const open = controls.classList.toggle('open');
-        resultEl.classList.remove('visible');
-        if (open) fromInput.focus();
-      });
-
-      gpsBtn.addEventListener('click', function () {
-        if (!navigator.geolocation) { showToast('GPS not available'); return; }
-        gpsBtn.textContent = '…';
-        navigator.geolocation.getCurrentPosition(
-          async function (pos) {
-            try {
-              const { latitude: lat, longitude: lon } = pos.coords;
-              const res = await fetch(
-                'https://nominatim.openstreetmap.org/reverse?' +
-                new URLSearchParams({ lat, lon, format: 'json' }),
-                { headers: { 'Referer': location.origin } }
-              );
-              const d = await res.json();
-              fromInput.value = d.display_name || (lat.toFixed(5) + ', ' + lon.toFixed(5));
-            } catch (e) {
-              fromInput.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
-            }
-            gpsBtn.textContent = '📍';
-          },
-          function () { gpsBtn.textContent = '📍'; showToast('Could not get location'); }
-        );
-      });
-
-      async function geocode(q) {
-        const res = await fetch(
-          'https://nominatim.openstreetmap.org/search?' +
-          new URLSearchParams({ q, format: 'json', limit: '1' }),
-          { headers: { 'Referer': location.origin } }
-        );
-        const data = await res.json();
-        if (!data.length) throw new Error('Address not found — try being more specific');
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      }
-
-      calcBtn.addEventListener('click', async function () {
-        const from  = fromInput.value.trim();
-        const to    = toInput.value.trim();
-        const mpg   = parseFloat(mpgInput.value);
-        const price = parseFloat(priceInput.value);
-
-        if (!from)            { showToast('Enter a departure address'); return; }
-        if (!to)              { showToast('Enter a destination'); return; }
-        if (!mpg || mpg <= 0) { showToast('Enter your car\'s MPG'); return; }
-        if (!price || price <= 0) { showToast('Enter a gas price per gallon'); return; }
-
-        calcBtn.textContent = 'Calculating…';
-        calcBtn.disabled = true;
-        resultEl.classList.remove('visible');
-
-        try {
-          const [a, b] = await Promise.all([geocode(from), geocode(to)]);
-          const osrmRes = await fetch(
-            'https://router.project-osrm.org/route/v1/driving/' +
-            a.lon + ',' + a.lat + ';' + b.lon + ',' + b.lat + '?overview=false'
-          );
-          const osrmData = await osrmRes.json();
-          if (!osrmData.routes || !osrmData.routes.length) throw new Error('No driving route found between those locations');
-
-          const distMiles  = osrmData.routes[0].distance * 0.000621371;
-          const durationS  = osrmData.routes[0].duration;
-          const gallons    = distMiles / mpg;
-          const totalCost  = gallons * price;
-          const hrs  = Math.floor(durationS / 3600);
-          const mins = Math.round((durationS % 3600) / 60);
-          const timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + ' min';
-
-          resultEl.innerHTML =
-            '<div class="trip-result-cost">$' + totalCost.toFixed(2) + '</div>' +
-            '<div class="trip-result-detail">' +
-              distMiles.toFixed(1) + ' mi &nbsp;·&nbsp; ' +
-              gallons.toFixed(2) + ' gal &nbsp;·&nbsp; ' +
-              timeStr + ' drive' +
-            '</div>';
-          resultEl.classList.add('visible');
-        } catch (e) {
-          showToast(e.message || 'Could not calculate route');
-        } finally {
-          calcBtn.textContent = 'Tell me! ⛽';
-          calcBtn.disabled = false;
-        }
-      });
-    }
-
     function boot() {
-      setLoadingProgress(10, 'Starting up…');
       initFirebase();
-      setLoadingProgress(25, 'Loading map…');
       initMap();
       setupAuthModal();
       setupDragToDismiss();
       setupForms();
       setupSearch();
-      setupTripCost();
       setupPriceFilter();
       setupHistoryPanel();
       setupAdminUserPanel();
@@ -6148,8 +5470,6 @@ out center tags;`.trim();
       setupUserProfile();
       setupInstallBanner();
       setupPriceView();
-      setupBrandFilter();
-      setupPriceAlert();
 
       // Backdrop tap closes whichever panel is open
       document.getElementById('panel-backdrop').addEventListener('click', closeAllPanels);
